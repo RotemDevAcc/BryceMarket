@@ -1,0 +1,56 @@
+/* styles.css */
+
+body {
+    background-color: #ffffff;
+    color: #000000;
+}
+
+/* Dark mode styles */
+body.dark-mode {
+    background-color: #121212;
+    /* Change this to your desired dark background color */
+    color: #ffffff;
+    /* Change this to your desired dark text color */
+}
+
+/* Add styles for other elements in both light and dark modes as needed */
+/* For example, update the header background color */
+header {
+    background-color: #343a40;
+    /* Change this to your desired header background color */
+}
+
+.dark-mode {
+    background-color: #333;
+    color: #fff;
+}
+
+.dark-mode a {
+    color: #55a1ff;
+}
+
+.dark-mode .card-header {
+    background-color: #333;
+    color: #fff !important;
+    /* Set the text color to white in dark mode */
+}
+
+
+.dark-mode .card-body {
+    color: #ffffff !important;
+    /* Set the text color to white in dark mode */
+    background-color: #333;
+}
+
+
+.dark-mode .card {
+    background-color: #333;
+}
+
+.dark-mode .card-header {
+    background-color: #333;
+}
+
+.dark-mode .list-group-item {
+    background-color: #161616;
+}

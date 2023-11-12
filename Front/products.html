@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Products - Supermarket</title>
+    <!-- Include Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Include custom CSS for dark mode -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body onload="Init()">
+    <div class="text-center mt-3">
+        <button id="darkModeButton" class="btn btn-secondary">Dark Mode</button>
+    </div>
+
+    <header class="bg-dark text-white">
+        <div class="container">
+            <h1>Our Products</h1>
+            <nav>
+                <ul class="nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="products.html">Products</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="contact.html">Contact</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="login.html">Login</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <h3 id="header" style="display: none;"></h3>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Products list -->
+                <div id="productlist"></div>
+            </div>
+            <div class="col-md-4">
+                <!-- Shopping cart side card -->
+                <div class="card">
+                    <div class="card-header">
+                        Shopping Cart
+                    </div>
+                    <ul class="list-group list-group-flush" id="cart-items">
+                        <!-- Cart items will be added here -->
+                    </ul>
+                    <div class="card-body">
+                        <button class="btn btn-primary" onclick="checkout()">Checkout</button>
+                        <button class="btn btn-danger" onclick="clearCart()">Clear Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        let cart = {};
+        let shoppingproducts = []
+        let myToken = "";
+        const MY_SERVER = "http://127.0.0.1:8000"
+        async function ShowProducts() {
+            if (!myToken || myToken == "") {
+                productlist.innerHTML = `
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <a href="login.html">You Must Log in First!</a>
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                `;
+                return
+            }
+            
+            const response = await fetch(MY_SERVER + "/productslist/", {
+                method: 'GET', // or the HTTP method you need (GET, POST, etc.)
+                headers: {
+                    'Authorization': `Bearer ${myToken}`,
+                    'Content-Type': 'application/json', // Set the appropriate content type if needed
+                    // You can include other headers as needed
+                },
+                // You can include other options like 'body' for POST requests, etc.
+            });
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    productlist.innerHTML = `
+                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                            <a href="login.html">You Must Log in First!</a>
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    // Handle other errors accordingly
+                    productlist.innerHTML = `
+                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                            ERROR, Server is Not Available.
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    `;
+                    console.error(`Error: ${response.status} - ${response.statusText}`);
+                }
+                return;
+            }
+            const answer = await response.json();
+            const products = answer.products
+            const categories = answer.categories
+
+            let categorytype = {}
+            categories.map(function (category) {
+                categorytype[category.id] = category.desc
+            })
+            shoppingproducts = products
+            productlist.innerHTML = ""; // Clear the productlist
+
+            products.map(function (element, index) {
+                productlist.innerHTML += `
+                <div class="card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="${MY_SERVER}${element.img}" alt="Product Image" class="img-fluid">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">${element.name}</h5>
+                                <p class="card-text">Description: ${element.desc}</p>
+                                <p class="card-text">Category: ${categorytype[element.category]}</p>
+                                <p class="card-text">Price: $${element.price}</p>
+                                <button class="btn btn-primary" onclick="OnProductBuy(${index})">Buy</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            });
+        }
+
+        function OnProductBuy(id) {
+            let product = shoppingproducts[id]
+            addToCart(product);
+        }
+
+        function addToCart(product) {
+            // Check if the product is already in the cart
+            if (cart[product.id]) {
+                // If it is, increment the count
+                cart[product.id].count++;
+            } else {
+                // If not, add it to the cart with a count of 1
+                cart[product.id] = { ...product, count: 1 };
+            }
+
+            updateCartDisplay();
+        }
+
+        function updateCartDisplay() {
+            const cartItems = document.getElementById('cart-items');
+            cartItems.innerHTML = ''; // Clear the existing items
+
+            for (const productId in cart) {
+                if (cart.hasOwnProperty(productId)) {
+                    const product = cart[productId];
+                    const cartItem = document.createElement('li');
+                    cartItem.classList.add('list-group-item');
+                    cartItem.innerHTML = `${product.name} (Count: ${product.count}) - $${product.price * product.count}`;
+                    cartItems.appendChild(cartItem);
+                }
+            }
+            SaveCart()
+        }
+
+        async function checkout() {
+            if (!cart || cart.length == 0 || Object.keys(cart).length === 0) {
+                alert("No Items In The Cart Yet.")
+                return
+            }
+
+            // Calculate the total price
+            let totalPrice = 0;
+            for (const productId in cart) {
+                if (cart.hasOwnProperty(productId)) {
+                    const product = cart[productId];
+                    totalPrice += product.price * product.count;
+                }
+            }
+
+            // Ask for confirmation
+            const confirmationMessage = `Are you sure you want to purchase all the items for $${totalPrice}?`;
+            const isConfirmed = confirm(confirmationMessage);
+
+            if (isConfirmed) {
+                // Proceed with the purchase logic
+                // ...
+                const response = await fetch(MY_SERVER + "/purchase/", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${myToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ "cart": cart, "price": totalPrice })
+                })
+                const result = await response.json();
+                if (result.state == "success") {
+                    Message(result.msg, "success")
+                } else {
+                    Message(result.msg, "error")
+                }
+                //alert("Purchase confirmed. Implement your purchase logic here.");
+            } else {
+                alert("Purchase canceled.");
+            }
+        }
+
+        function clearCart(specificitem) {
+            if (!specificitem) {
+                const cartItems = document.getElementById('cart-items');
+                cartItems.innerHTML = ''; // Clear the existing items
+                for (const productId in cart) {
+                    if (cart.hasOwnProperty(productId)) {
+                        delete cart[productId];
+                    }
+                }
+                localStorage.removeItem("cart")
+            } else {
+                for (const productId in cart) {
+                    console.log(productId)
+                }
+            }
+
+        }
+
+        function SaveCart() {
+            localStorage.setItem("cart", JSON.stringify(cart))
+        }
+
+        function LoadCart() {
+            let cartsave = JSON.parse(localStorage.getItem("cart"))
+            if (cartsave) {
+                cart = cartsave
+            }
+            updateCartDisplay()
+        }
+
+        function Init() {
+
+            if (myToken != '') {
+                LoadCart()
+                ShowProducts()
+            }
+            else {
+                let variable = sessionStorage.getItem("token")
+                if (variable) {
+                    myToken = variable
+                    details = JSON.parse(sessionStorage.getItem("userDetails"))
+                    LoadCart()
+                    ShowProducts()
+                } else {
+                    window.location.href = 'login.html';
+                }
+            }
+            DarkMode()
+            let user = sessionStorage.getItem("user")
+            if (user) {
+
+            }
+        }
+
+        // Function to toggle dark mode
+        function toggleDarkMode() {
+            const body = document.body;
+            body.classList.toggle("dark-mode");
+            // Toggle button color
+            const darkModeButton = document.getElementById("darkModeButton");
+            if (darkModeButton.classList.contains("btn-secondary")) {
+                darkModeButton.classList.replace("btn-secondary", "btn-primary");
+                darkModeButton.innerText = "Normal Mode"
+            } else {
+                darkModeButton.classList.replace("btn-primary", "btn-secondary");
+                darkModeButton.innerText = "Dark Mode"
+            }
+        }
+
+        const darkModeButton = document.getElementById("darkModeButton");
+        darkModeButton.addEventListener("click", toggleDarkMode);
+
+        function DarkMode() {
+            const darkmode = localStorage.getItem("darkmode")
+            if (darkmode === "true") {
+                const body = document.body;
+                body.classList.toggle("dark-mode");
+                const darkModeButton = document.getElementById("darkModeButton");
+                if (darkModeButton.classList.contains("btn-secondary")) {
+                    darkModeButton.classList.replace("btn-secondary", "btn-primary");
+                    darkModeButton.innerText = "Normal Mode"
+                } else {
+                    darkModeButton.classList.replace("btn-primary", "btn-secondary");
+                    darkModeButton.innerText = "Dark Mode"
+                }
+            }
+        }
+    </script>
+
+    <!-- Your other JavaScript functions for cart functionality can be added here -->
+</body>
+
+</html>

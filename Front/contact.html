@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Contact Us - Bryce Market</title>
+    <!-- Include Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Include custom CSS for dark mode -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body onload="Init()">
+    <div class="text-center mt-3">
+        <button id="darkModeButton" class="btn btn-secondary">Dark Mode</button>
+    </div>
+    
+    <header class="bg-dark text-white">
+        <div class="container">
+            <h1>Contact Us</h1>
+            <nav>
+                <ul class="nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="products.html">Products</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="contact.html">Contact</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="login.html">Login</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    
+    <section class="container mt-4">
+        <h2>Contact Information</h2>
+        <p>If you have any questions or need assistance, feel free to contact us.</p>
+        <address>
+            Email: <a href="mailto:contact@yourmarket.com">contact@yourmarket.com</a><br>
+            Phone: +1-123-456-7890<br>
+            Address: 123 Supermarket St, Cityville, USA
+        </address>
+    </section>
+    
+    <footer class="bg-dark text-white text-center py-3">
+        <p>&copy; 2023 Bryce Market. All rights reserved.</p>
+    </footer>
+    
+    <!-- Include Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
+    <script>
+        // Function to toggle dark mode
+        function toggleDarkMode() {
+            const body = document.body;
+            body.classList.toggle("dark-mode");
+            // Toggle button color
+            const darkModeButton = document.getElementById("darkModeButton");
+            if (darkModeButton.classList.contains("btn-secondary")) {
+                darkModeButton.classList.replace("btn-secondary", "btn-primary");
+                darkModeButton.innerText = "Normal Mode"
+            } else {
+                darkModeButton.classList.replace("btn-primary", "btn-secondary");
+                darkModeButton.innerText = "Dark Mode"
+            }
+            const isDarkMode = body.classList.contains("dark-mode");
+            localStorage.setItem("darkmode",isDarkMode)
+        }
+
+
+
+        const darkModeButton = document.getElementById("darkModeButton");
+        darkModeButton.addEventListener("click", toggleDarkMode);
+
+        
+        function DarkMode(){
+            const darkmode = localStorage.getItem("darkmode")
+            if(darkmode === "true"){
+                const body = document.body;
+                body.classList.toggle("dark-mode");
+                const darkModeButton = document.getElementById("darkModeButton");
+                if (darkModeButton.classList.contains("btn-secondary")) {
+                    darkModeButton.classList.replace("btn-secondary", "btn-primary");
+                    darkModeButton.innerText = "Normal Mode"
+                } else {
+                    darkModeButton.classList.replace("btn-primary", "btn-secondary");
+                    darkModeButton.innerText = "Dark Mode"
+                }
+            }
+        }
+        
+        function Init(){            
+            DarkMode()
+            let user = sessionStorage.getItem("user")
+            if (user){
+                
+            }
+        }
+    </script>
+</body>
+</html>
