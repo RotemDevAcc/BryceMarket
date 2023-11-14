@@ -59,43 +59,9 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
+    <script src="darkmode.js"></script>
     <script>
-        const MY_SERVER = "http://127.0.0.1:8000"
-        // Function to toggle dark mode
-        function toggleDarkMode() {
-            const body = document.body;
-            body.classList.toggle("dark-mode");
-            // Toggle button color
-            const darkModeButton = document.getElementById("darkModeButton");
-            if (darkModeButton.classList.contains("btn-secondary")) {
-                darkModeButton.classList.replace("btn-secondary", "btn-primary");
-                darkModeButton.innerText = "Normal Mode"
-            } else {
-                darkModeButton.classList.replace("btn-primary", "btn-secondary");
-                darkModeButton.innerText = "Dark Mode"
-            }
-        }
-
-        const darkModeButton = document.getElementById("darkModeButton");
-        darkModeButton.addEventListener("click", toggleDarkMode);
-
-        function DarkMode() {
-            const darkmode = localStorage.getItem("darkmode")
-            if (darkmode === "true") {
-                const body = document.body;
-                body.classList.toggle("dark-mode");
-                const darkModeButton = document.getElementById("darkModeButton");
-                if (darkModeButton.classList.contains("btn-secondary")) {
-                    darkModeButton.classList.replace("btn-secondary", "btn-primary");
-                    darkModeButton.innerText = "Normal Mode"
-                } else {
-                    darkModeButton.classList.replace("btn-primary", "btn-secondary");
-                    darkModeButton.innerText = "Dark Mode"
-                }
-            }
-        }
-
+        const MY_SERVER = "http://127.0.0.1:8000"    
         const login = async () => {
             const uservalue = document.getElementById("username").value
             const passvalue = document.getElementById("password").value

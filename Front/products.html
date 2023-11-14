@@ -7,13 +7,14 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <!-- Include custom CSS for dark mode -->
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.css">
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 </head>
 
 <body onload="Init()">
     <div class="text-center mt-3">
         <button id="darkModeButton" class="btn btn-secondary">Dark Mode</button>
     </div>
-
     <header class="bg-dark text-white">
         <div class="container">
             <h1>Our Products</h1>
@@ -30,6 +31,9 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="login.html">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="http://127.0.0.1:8000/admin">Admin</a>
                     </li>
                 </ul>
             </nav>
@@ -53,6 +57,9 @@
                         <!-- Cart items will be added here -->
                     </ul>
                     <div class="card-body">
+                        <div id = "priceheader" class="card-header">
+                            
+                        </div>
                         <button class="btn btn-primary" onclick="checkout()">Checkout</button>
                         <button class="btn btn-danger" onclick="clearCart()">Clear Cart</button>
                     </div>
@@ -65,12 +72,17 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
+    <script src="darkmode.js"></script>
     <script>
+
+
+
         let cart = {};
         let shoppingproducts = []
         let myToken = "";
         const MY_SERVER = "http://127.0.0.1:8000"
+
+
         async function ShowProducts() {
             if (!myToken || myToken == "") {
                 productlist.innerHTML = `
@@ -128,6 +140,17 @@
             shoppingproducts = products
             productlist.innerHTML = ""; // Clear the productlist
 
+            if (!products.length || products.length == 0){
+                productlist.innerHTML = `
+                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                            No Products Are Available Right Now.
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    `;
+                return
+            }
             products.map(function (element, index) {
                 productlist.innerHTML += `
                 <div class="card mb-3" style="max-width: 540px;">
@@ -141,7 +164,7 @@
                                 <p class="card-text">Description: ${element.desc}</p>
                                 <p class="card-text">Category: ${categorytype[element.category]}</p>
                                 <p class="card-text">Price: $${element.price}</p>
-                                <button class="btn btn-primary" onclick="OnProductBuy(${index})">Buy</button>
+                                <button class="btn btn-primary" onclick="OnProductBuy(${index})">Add To Cart</button>
                             </div>
                         </div>
                     </div>
@@ -171,16 +194,21 @@
         function updateCartDisplay() {
             const cartItems = document.getElementById('cart-items');
             cartItems.innerHTML = ''; // Clear the existing items
-
+            let displayprice = 0
             for (const productId in cart) {
                 if (cart.hasOwnProperty(productId)) {
                     const product = cart[productId];
                     const cartItem = document.createElement('li');
                     cartItem.classList.add('list-group-item');
-                    cartItem.innerHTML = `${product.name} (Count: ${product.count}) - $${product.price * product.count}`;
+                    //const totalPrice = (product.price * product.count).toFixed(2);
+                    const totalPrice = Number((product.price * product.count).toFixed(2));
+                    cartItem.innerHTML = `${product.name} (Count: ${product.count}) - $${totalPrice}`;
+                    displayprice += totalPrice
                     cartItems.appendChild(cartItem);
+                    priceheader.innerText = `$${displayprice.toFixed(2)}`
                 }
             }
+
             SaveCart()
         }
 
@@ -206,7 +234,7 @@
             if (isConfirmed) {
                 // Proceed with the purchase logic
                 // ...
-                const response = await fetch(MY_SERVER + "/purchase/", {
+                const response = await fetch(MY_SERVER + "/productslist/", {
                     method: "POST",
                     headers: {
                         "Authorization": `Bearer ${myToken}`,
@@ -236,6 +264,7 @@
                     }
                 }
                 localStorage.removeItem("cart")
+                priceheader.innerText = "$0.0"
             } else {
                 for (const productId in cart) {
                     console.log(productId)
@@ -274,44 +303,30 @@
                 }
             }
             DarkMode()
-            let user = sessionStorage.getItem("user")
-            if (user) {
-
-            }
         }
 
-        // Function to toggle dark mode
-        function toggleDarkMode() {
-            const body = document.body;
-            body.classList.toggle("dark-mode");
-            // Toggle button color
-            const darkModeButton = document.getElementById("darkModeButton");
-            if (darkModeButton.classList.contains("btn-secondary")) {
-                darkModeButton.classList.replace("btn-secondary", "btn-primary");
-                darkModeButton.innerText = "Normal Mode"
-            } else {
-                darkModeButton.classList.replace("btn-primary", "btn-secondary");
-                darkModeButton.innerText = "Dark Mode"
-            }
-        }
+        function Message(message, type){
 
-        const darkModeButton = document.getElementById("darkModeButton");
-        darkModeButton.addEventListener("click", toggleDarkMode);
-
-        function DarkMode() {
-            const darkmode = localStorage.getItem("darkmode")
-            if (darkmode === "true") {
-                const body = document.body;
-                body.classList.toggle("dark-mode");
-                const darkModeButton = document.getElementById("darkModeButton");
-                if (darkModeButton.classList.contains("btn-secondary")) {
-                    darkModeButton.classList.replace("btn-secondary", "btn-primary");
-                    darkModeButton.innerText = "Normal Mode"
-                } else {
-                    darkModeButton.classList.replace("btn-primary", "btn-secondary");
-                    darkModeButton.innerText = "Dark Mode"
-                }
+            // If type not selected play a default color
+            if(!type){
+                type = "linear-gradient(to right, #00b09b, #96c93d)"
+            }else if (type == "error"){
+                type = "linear-gradient(to right, #F74141, #B30000)"
+            }else if (type == "info"){
+                type = "linear-gradient(to right, #25A9F6, #0067CE)"
+            }else if (type == "success"){
+                type = "linear-gradient(to right, #00A510, #167e21)"
             }
+            Toastify({
+                text: message,
+                style: {
+                    background: type, // Customize the background color
+                },
+                className: "custom-toastify", // Add a custom CSS class for styling
+                position: "bottom-center", // Change the position of the notification
+                duration: 3000, // Duration in milliseconds
+                gravity: "top", // Change the direction of the notification animation
+            }).showToast();
         }
     </script>
 
