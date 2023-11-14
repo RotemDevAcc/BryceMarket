@@ -7,8 +7,12 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.contrib.auth.models import User
 from .models import Product, Category
-from .serializer import ProductSerializer, CategorySerializer
+from .serializer import ProductSerializer, CategorySerializer, ReceiptSerializer
+from django.core.exceptions import ObjectDoesNotExist
+import json
+from decimal import Decimal
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -27,6 +31,14 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
+def is_user_admin(user):
+    if not user or user == None:
+        return
+    
+    #print(is_user_admin(request.user))
+
+    return user.is_staff
+
 def index(req):
     return JsonResponse('hello', safe=False)
 
@@ -36,6 +48,7 @@ class ProductsView(APIView):
     This class handle the CRUD operations for MyModel
     """
     def get(self, request):
+
         """
         Handle GET requests to return a list of MyModel objects
         """
@@ -120,18 +133,75 @@ class CategoryView(APIView):
 
 
 
-@api_view(["GET"])
+@api_view(["GET","POST"])
 def productlist(request):
-    products = Product.objects.all()
-    serializer = ProductSerializer(products, many=True)
+    if not request.method: return
+    if request.method == "GET":
+        products = Product.objects.all()
+        serializer = ProductSerializer(products, many=True)
+        
+        categories = Category.objects.all()
+        serializer2 = CategorySerializer(categories, many=True)
+
+        # Combine the serialized data into a single dictionary
+        combined_data = {
+            'products': serializer.data,
+            'categories': serializer2.data,
+        }
+        return Response(combined_data)
+    elif request.method == "POST":
+        user = request.user
+        price = Decimal(str(request.data['price']))
+        cart = request.data['cart']
+        totalPrice = Decimal('0')
+
+        PurchasedItems = []
+
+        for item_id, item_info in cart.items():
+            try:
+                product = Product.objects.get(id=item_info['id'])
+                if product:
+                    if product.price == Decimal(item_info['price']):
+                        itemprice = Decimal(item_info['price'])
+                        totalPrice += (itemprice * item_info['count'])
+                        #PurchasedItems.append({"item": item_info['id'], "count": item_info['count'], "price": (itemprice * item_info['count']).quantize(Decimal('0.01'))})
+                        PurchasedItems.append({
+                            "item": item_info['id'],
+                            "count": item_info['count'],
+                            "price": float((itemprice * item_info['count']).quantize(Decimal('0.01')))
+                        })
+                    else:
+                        print("Warning, Wrong Price")
+                        return Response({"state": "fail", "msg": "ERROR, Something went wrong."})
+                else:
+                    print("Warning, Unauthorized Item Detected.")
+                    return Response({"state": "fail", "msg": "ERROR, Something went wrong."})
+            except ObjectDoesNotExist:
+                print(f"Warning, Unauthorized Item Detected {item_info['id']}.")
+                return Response({"state": "fail", "msg": "ERROR, Something went wrong."})
+
+        if totalPrice == price:
+            print("Purchase Completed")
+            print(PurchasedItems)
+            user_instance = User.objects.get(username=user)
+
+            receipt_data = {
+                'products': json.dumps(PurchasedItems),
+                'price': float(totalPrice),
+                'user': user_instance.id
+            }
+
+            serializer = ReceiptSerializer(data=receipt_data)
+            if serializer.is_valid():
+                serializer.save()
+                print("Receipt saved successfully")
+                return Response({"state": "success", "msg": f"Purchase Complete, You Bought All The Specificed Items For ${totalPrice}"})
+            else:
+                print("Error in data:", serializer.errors)
+        else:
+            print(f"Warning Wrong Price Client Reported: {type(price)}, Server Calculated: {type(totalPrice)}")
+            print(f"Client Reported Price: {price}, Server Calculated Price: {totalPrice}")
+            return Response({"state": "fail", "msg": "Purchase Failed"})
+
     
-    categories = Category.objects.all()
-    serializer2 = CategorySerializer(categories, many=True)
 
-    # Combine the serialized data into a single dictionary
-    combined_data = {
-        'products': serializer.data,
-        'categories': serializer2.data,
-    }
-
-    return Response(combined_data)
