@@ -1,4 +1,11 @@
 // Function to toggle dark mode
+
+let myToken = "";
+
+let variable = sessionStorage.getItem("token")
+if (variable)
+    myToken = variable
+
 function toggleDarkMode() {
     const body = document.body;
     body.classList.toggle("dark-mode");
@@ -32,4 +39,30 @@ function DarkMode() {
             darkModeButton.innerText = "Dark Mode"
         }
     }
+}
+
+DarkMode()
+
+function Message(message, type){
+
+    // If type not selected play a default color
+    if(!type){
+        type = "linear-gradient(to right, #00b09b, #96c93d)"
+    }else if (type == "error"){
+        type = "linear-gradient(to right, #F74141, #B30000)"
+    }else if (type == "info"){
+        type = "linear-gradient(to right, #25A9F6, #0067CE)"
+    }else if (type == "success"){
+        type = "linear-gradient(to right, #00A510, #167e21)"
+    }
+    Toastify({
+        text: message,
+        style: {
+            background: type, // Customize the background color
+        },
+        className: "custom-toastify", // Add a custom CSS class for styling
+        position: "bottom-center", // Change the position of the notification
+        duration: 3000, // Duration in milliseconds
+        gravity: "top", // Change the direction of the notification animation
+    }).showToast();
 }

@@ -59,7 +59,7 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="darkmode.js"></script>
+    <script src="settings.js"></script>
     <script>
         const MY_SERVER = "http://127.0.0.1:8000"    
         const login = async () => {
@@ -104,7 +104,6 @@
         }
 
         function Init(){
-            DarkMode()
             let isLiveServer = sessionStorage.getItem("IsThisFirstTime_Log_From_LiveServer") != null
             if (isLiveServer) {
                 document.body.innerHTML = "<h1>Error: Can't run this program with Live Server!</h1>";

@@ -33,7 +33,8 @@
                         <a class="nav-link" href="login.html">Login</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="http://127.0.0.1:8000/admin">Admin</a>
+                        <a class="nav-link" href="management/admin.html">Admin</a>
+                        <!-- <a class="nav-link" href="http://127.0.0.1:8000/admin">Admin</a> -->
                     </li>
                 </ul>
             </nav>
@@ -72,14 +73,13 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="darkmode.js"></script>
+    <script src="settings.js"></script>
     <script>
 
 
 
         let cart = {};
         let shoppingproducts = []
-        let myToken = "";
         const MY_SERVER = "http://127.0.0.1:8000"
 
 
@@ -295,38 +295,12 @@
                 let variable = sessionStorage.getItem("token")
                 if (variable) {
                     myToken = variable
-                    details = JSON.parse(sessionStorage.getItem("userDetails"))
                     LoadCart()
                     ShowProducts()
                 } else {
                     window.location.href = 'login.html';
                 }
             }
-            DarkMode()
-        }
-
-        function Message(message, type){
-
-            // If type not selected play a default color
-            if(!type){
-                type = "linear-gradient(to right, #00b09b, #96c93d)"
-            }else if (type == "error"){
-                type = "linear-gradient(to right, #F74141, #B30000)"
-            }else if (type == "info"){
-                type = "linear-gradient(to right, #25A9F6, #0067CE)"
-            }else if (type == "success"){
-                type = "linear-gradient(to right, #00A510, #167e21)"
-            }
-            Toastify({
-                text: message,
-                style: {
-                    background: type, // Customize the background color
-                },
-                className: "custom-toastify", // Add a custom CSS class for styling
-                position: "bottom-center", // Change the position of the notification
-                duration: 3000, // Duration in milliseconds
-                gravity: "top", // Change the direction of the notification animation
-            }).showToast();
         }
     </script>
 

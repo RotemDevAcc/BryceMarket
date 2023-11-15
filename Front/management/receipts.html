@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bryce Admin - Receipts</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Include custom CSS for dark mode -->
+    <link rel="stylesheet" href="../styles.css">
+</head>
+
+<body>
+    <div class="text-center mt-3">
+        <button id="darkModeButton" class="btn btn-secondary">Dark Mode</button>
+    </div>
+
+    <header class="bg-dark text-white">
+        <div class="container">
+            <h1>Admin</h1>
+            <nav>
+                <ul class="nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="../index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="customers.html">Customers</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="allproducts.html">All Products</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="receipts.html">Show Receipts</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <li id="something">
+
+    </li>
+</body>
+<script src="../settings.js"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    const MY_SERVER = "http://127.0.0.1:8000"
+    console.log(myToken)
+    if (myToken && myToken != "") {
+        
+    
+        fetch(MY_SERVER + '/receipts', {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${myToken}`,
+                'Content-Type': 'application/json', // Set the appropriate content type if needed
+                // You can include other headers as needed
+            },
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.table(data)
+            })
+            .catch(error => {
+                console.error('Error:', error);
+
+            });
+    }
+    else{
+        window.location.href = 'index.html';
+    }
+</script>
+
+</html>
