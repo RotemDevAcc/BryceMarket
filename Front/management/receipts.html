@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <!-- Include custom CSS for dark mode -->
     <link rel="stylesheet" href="../styles.css">
+    <!-- Font Awesome-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 </head>
 
 <body>
@@ -17,7 +19,7 @@
 
     <header class="bg-dark text-white">
         <div class="container">
-            <h1>Admin</h1>
+            <h1>Bryce Admin - Receipts</h1>
             <nav>
                 <ul class="nav">
                     <li class="nav-item">
@@ -36,40 +38,88 @@
             </nav>
         </div>
     </header>
-    <li id="something">
 
-    </li>
-</body>
-<script src="../settings.js"></script>
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-<script>
-    const MY_SERVER = "http://127.0.0.1:8000"
-    console.log(myToken)
-    if (myToken && myToken != "") {
-        
-    
-        fetch(MY_SERVER + '/receipts', {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${myToken}`,
-                'Content-Type': 'application/json', // Set the appropriate content type if needed
-                // You can include other headers as needed
-            },
-        })
-            .then(response => response.json())
-            .then(data => {
-                console.table(data)
+    <div class="container mt-4">
+        <ul id="receiptList" class="list-group">
+            <!-- Receipts will be dynamically added here -->
+        </ul>
+    </div>
+
+    <script src="../settings.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        const MY_SERVER = "http://127.0.0.1:8000";
+
+        if (myToken && myToken !== "") {
+            fetch(MY_SERVER + '/getreceipts/', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${myToken}`,
+                    'Content-Type': 'application/json',
+                },
             })
-            .catch(error => {
-                console.error('Error:', error);
+                .then(res => {
+                    if (res.status === 401 || res.status === 403) {
+                        window.location.href = '../index.html';
+                        return;
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    const receipts = data.payload;
+                    receipts.sort((a, b) => b.id - a.id);
+                    displayReceipts(receipts, data.products);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        } else {
+            window.location.href = '../index.html';
+        }
 
+        function displayReceipts(receipts, allproducts) {
+            const receiptList = document.getElementById('receiptList');
+            receiptList.innerHTML = "";
+
+            receipts.forEach(receipt => {
+                const listItem = document.createElement('li');
+                listItem.className = 'list-group-item';
+                listItem.innerHTML = `
+                    <strong>Receipt ID:</strong> ${receipt.id}<br>
+                    <strong>User:</strong> ${receipt.recuser.username} <span style="color: green;">[${receipt.recuser.userid}]</span><br>
+                    <strong>Price:</strong> $${receipt.price}<br>
+                    <strong>Products:</strong>
+                    <ul>
+                        ${formatProducts(receipt.products, allproducts)}
+                    </ul>
+                `;
+                receiptList.appendChild(listItem);
             });
-    }
-    else{
-        window.location.href = 'index.html';
-    }
-</script>
+        }
+
+
+        function formatProducts(products, allproducts) {
+            const productItems = products.map(product => {
+                const listItem = document.createElement('li');
+                listItem.className = 'list-group-item';
+                listItem.innerHTML = `
+                <i class="fas fa-shopping-cart"></i> Item: ${GetProductName(product.item, allproducts)}<br>
+                <i class="fas fa-box"></i> Count: ${product.count}<br>
+                <i class="fas fa-dollar-sign"></i> Price: $${product.price}<br>
+                `;
+                return listItem.outerHTML;
+            });
+
+            return productItems.join('');
+        }
+
+        function GetProductName(productId, allproducts) {
+            const foundProduct = allproducts.find(product => product.id === productId);
+            return foundProduct ? foundProduct.name : 'Product Not Found';
+        }
+    </script>
+</body>
 
 </html>
