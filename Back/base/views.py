@@ -8,7 +8,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth.models import User
-from .models import Product, Category
+from .models import Product, Category, Receipt
 from .serializer import ProductSerializer, CategorySerializer, ReceiptSerializer
 from django.core.exceptions import ObjectDoesNotExist
 import json
@@ -131,8 +131,6 @@ class CategoryView(APIView):
         category.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-
 @api_view(["GET","POST"])
 def productlist(request):
     if not request.method: return
@@ -205,3 +203,29 @@ def productlist(request):
 
     
 
+
+# Management
+@permission_classes([IsAuthenticated])
+@api_view(["GET"])
+def receipts(request):
+    print("Here")
+    user = request.user
+    if not is_user_admin(user):
+        return Response({"state":"fail","msg":"ERROR 401"})
+    
+    receipts = Receipt.objects.all()
+    products = Product.objects.all()
+    product_serializer = ProductSerializer(products, many=True)  # Use the serializer
+    allproducts = product_serializer.data  # Retrieve the serialized data
+    payload = []
+    for receipt in receipts:
+        recuser = User.objects.get(id=receipt.user_id)
+        # Convert the products string to a list of dictionaries
+        products_list = json.loads(receipt.products)
+        payload.append({
+            "id": receipt.id,
+            "price": receipt.price,
+            "products": products_list,
+            "recuser": {"userid": recuser.id, "username": recuser.username}
+        })
+    return Response({"state":"success","payload":payload,"products":allproducts,"msg":"Success"})
