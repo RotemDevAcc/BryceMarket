@@ -105,6 +105,11 @@
 
         function Init(){
             DarkMode()
+            let isLiveServer = sessionStorage.getItem("IsThisFirstTime_Log_From_LiveServer") != null
+            if (isLiveServer) {
+                document.body.innerHTML = "<h1>Error: Can't run this program with Live Server!</h1>";
+            }
+                
         }
     </script>
 </body>
