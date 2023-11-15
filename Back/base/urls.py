@@ -6,6 +6,7 @@ urlpatterns = [
     path('categories/', CategoryView.as_view(), name='category-list'),
     path('products/', ProductsView.as_view(), name='product-list'),
     path('productslist/',views.productlist),
+    path('getreceipts/', views.receipts),
     path('login/', views.TokenObtainPairView.as_view()),
     # path('purchase/',views.purchase)
 ]
