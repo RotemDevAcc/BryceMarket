@@ -1,5 +1,4 @@
-"# BryceMarket" 
-# Project Name
+# Bryce Market
 
 A Supermarket System Using Django
 
