@@ -1,8 +1,7 @@
-from django.shortcuts import render
 from django.http import JsonResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
@@ -31,105 +30,18 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
-def is_user_admin(user):
-    if not user or user == None:
-        return
+#def is_user_admin(user):
+    #if not user or user == None:
+        #return
     
     #print(is_user_admin(request.user))
 
-    return user.is_staff
+    #return user.is_staff
 
 def index(req):
-    return JsonResponse('hello', safe=False)
-
-@permission_classes([IsAuthenticated])
-class ProductsView(APIView):
-    """
-    This class handle the CRUD operations for MyModel
-    """
-    def get(self, request):
-
-        """
-        Handle GET requests to return a list of MyModel objects
-        """
-        products = Product.objects.all()
-        serializer = ProductSerializer(products, many=True)
-        return Response(serializer.data)
+    return Response('hello', safe=False)
 
 
-    def post(self, request):
-        """
-        Handle POST requests to create a new Task object
-        """
-
-        serializer = ProductSerializer(data=request.data, context={'user': request.user})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-   
-    def put(self, request, pk):
-        """
-        Handle PUT requests to update an existing Task object
-        """
-        product = Product.objects.get(pk=pk)
-        serializer = ProductSerializer(product, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-   
-    def delete(self, request, pk):
-        """
-        Handle DELETE requests to delete a Task object
-        """
-        product = Product.objects.get(pk=pk)
-        product.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    
-@permission_classes([IsAuthenticated])
-class CategoryView(APIView):
-    """
-    This class handle the CRUD operations for MyModel
-    """
-    def get(self, request):
-        """
-        Handle GET requests to return a list of MyModel objects
-        """
-        categories = Category.objects.all()
-        serializer = CategorySerializer(categories, many=True)
-        return Response(serializer.data)
-
-
-    def post(self, request):
-        """
-        Handle POST requests to create a new Task object
-        """
-
-        serializer = CategorySerializer(data=request.data, context={'user': request.user})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-   
-    def put(self, request, pk):
-        """
-        Handle PUT requests to update an existing Task object
-        """
-        category = Category.objects.get(pk=pk)
-        serializer = CategorySerializer(category, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-   
-    def delete(self, request, pk):
-        """
-        Handle DELETE requests to delete a Task object
-        """
-        category = Category.objects.get(pk=pk)
-        category.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 @api_view(["GET","POST"])
 def productlist(request):
@@ -179,8 +91,6 @@ def productlist(request):
                 return Response({"state": "fail", "msg": "ERROR, Something went wrong."})
 
         if totalPrice == price:
-            print("Purchase Completed")
-            print(PurchasedItems)
             user_instance = User.objects.get(username=user)
 
             receipt_data = {
@@ -201,17 +111,13 @@ def productlist(request):
             print(f"Client Reported Price: {price}, Server Calculated Price: {totalPrice}")
             return Response({"state": "fail", "msg": "Purchase Failed"})
 
-    
-
-
 # Management
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsAdminUser])
 @api_view(["GET"])
 def receipts(request):
-    print("Here")
     user = request.user
-    if not is_user_admin(user):
-        return Response({"state":"fail","msg":"ERROR 401"})
+    #if not is_user_admin(user):
+        #return Response({"state":"fail","msg":"ERROR 401"})
     
     receipts = Receipt.objects.all()
     products = Product.objects.all()
@@ -219,6 +125,11 @@ def receipts(request):
     allproducts = product_serializer.data  # Retrieve the serialized data
     payload = []
     for receipt in receipts:
+
+        try:
+            recuser = User.objects.get(id=receipt.user_id)
+        except User.DoesNotExist:
+            return Response({"state": "fail", "msg": "User not found"}, status=status.HTTP_404_NOT_FOUND)
         recuser = User.objects.get(id=receipt.user_id)
         # Convert the products string to a list of dictionaries
         products_list = json.loads(receipt.products)
@@ -229,3 +140,102 @@ def receipts(request):
             "recuser": {"userid": recuser.id, "username": recuser.username}
         })
     return Response({"state":"success","payload":payload,"products":allproducts,"msg":"Success"})
+
+@permission_classes([IsAuthenticated, IsAdminUser])
+class ProductsView(APIView):
+    """
+    This class handle the CRUD operations for MyModel
+    """
+    def get(self, request):
+
+        """
+        Handle GET requests to return a list of MyModel objects
+        """
+        products = Product.objects.all()
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        
+
+        """
+        Handle POST requests to create a new Task object
+        """
+
+        serializer = ProductSerializer(data=request.data, context={'user': request.user})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+   
+    def put(self, request, pk):
+        """
+        Handle PUT requests to update an existing Task object
+        """
+        product = Product.objects.get(pk=pk)
+        serializer = ProductSerializer(product, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+   
+    def delete(self, request, pk):
+        """
+        Handle DELETE requests to delete a Task object
+        """
+        product = Product.objects.get(pk=pk)
+        product.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+@permission_classes([IsAuthenticated, IsAdminUser])
+class PManagemetView(APIView):
+    """
+    This class handle the CRUD operations for MyModel
+    """
+    def get(self, request):
+        """
+        Handle GET requests to return a list of MyModel objects
+        """
+        products = Product.objects.all()
+        serializer = ProductSerializer(products, many=True)
+
+        categories = Category.objects.all()
+        serializer2 = CategorySerializer(categories, many=True)
+
+        merged_data = {
+            "products": serializer.data,
+            "categories": serializer2.data,
+        }
+
+        return Response(merged_data)
+
+
+    def post(self, request):
+        """
+        Handle POST requests to create a new Task object
+        """
+
+        serializer = CategorySerializer(data=request.data, context={'user': request.user})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+   
+    def put(self, request, pk):
+        """
+        Handle PUT requests to update an existing Task object
+        """
+        category = Category.objects.get(pk=pk)
+        serializer = CategorySerializer(category, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+   
+    def delete(self, request, pk):
+        try:
+            product = Product.objects.get(pk=pk)
+            product.delete()
+            return JsonResponse({"success": True, "message": f"Product {pk} Was Deleted Successfully"})
+        except Product.DoesNotExist:
+            return JsonResponse({"success": False, "message": f"Product {pk} not found"})
