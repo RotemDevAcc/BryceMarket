@@ -1,5 +1,5 @@
 // Function to toggle dark mode
-
+const MY_SERVER = "http://127.0.0.1:8000";
 let myToken = "";
 
 let variable = sessionStorage.getItem("token")

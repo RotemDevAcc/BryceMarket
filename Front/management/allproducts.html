@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,12 +8,15 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <!-- Include custom CSS for dark mode -->
     <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.css">
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 </head>
+
 <body>
     <div class="text-center mt-3">
         <button id="darkModeButton" class="btn btn-secondary">Dark Mode</button>
     </div>
-    
+
     <header class="bg-dark text-white">
         <div class="container">
             <h1>Admin</h1>
@@ -34,12 +38,229 @@
             </nav>
         </div>
     </header>
+
+    <div class="container mt-4">
+        <ul id="productList" class="list-group">
+
+        </ul>
+    </div>
+
+    <div class="modal fade" id="manageProductModal" tabindex="-1" role="dialog"
+        aria-labelledby="manageProductModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="manageProductModalLabel">
+                        <span id="productDetails"></span>
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Your CRUD options/buttons go here -->
+                    <button class="btn btn-primary" onclick="editProduct()">Edit</button>
+                    <button class="btn btn-danger" onclick="deleteProduct()">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 <script src="../settings.js"></script>
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script>
-    const MY_SERVER = "http://127.0.0.1:8000"
+
+    let allproducts = {}
+    let allcategories = {}
+    if (myToken && myToken !== "") {
+        fetch(`${MY_SERVER}/pmanagement/`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${myToken}`,
+                'Content-Type': 'application/json',
+            },
+        })
+            .then(handleResponse)
+            .then(data => {
+                const productlist = data.products;
+                const categories = data.categories;
+
+                // Sort the product list by id
+                productlist.sort((a, b) => a.id - b.id);
+                // Sort the categories by id
+                categories.sort((a, b) => a.id - b.id);
+
+                allproducts = productlist
+                allcategories = categories
+                renderProducts(productlist, categories);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    } else {
+        window.location.href = '../index.html';
+    }
+
+    function handleResponse(res) {
+        if (res.status === 401 || res.status === 403) {
+            window.location.href = '../index.html';
+            throw new Error('Unauthorized or Forbidden');
+        }
+        return res.json();
+    }
+
+    function renderProducts(productlist, categories) {
+        const productList = document.getElementById('productList');
+
+        // Create a Bootstrap row
+        const row = document.createElement('div');
+        row.className = 'row';
+
+        productlist.forEach(product => {
+            // Create a Bootstrap column
+            const col = document.createElement('div');
+            col.className = 'col-md-4';
+
+            // Create a Bootstrap card
+            const card = document.createElement('div');
+            card.className = 'card';
+
+            // Check if product.img exists or use placeholder
+            const imgSrc = `${MY_SERVER}${product.img}`;
+
+            // Create an img element
+            const imgElement = document.createElement('img');
+            imgElement.src = imgSrc;
+            imgElement.alt = 'Product Image';
+            imgElement.className = 'img-fluid card-img-top';
+            imgElement.onerror = function () {
+                // Image not found, set the src to the placeholder
+                imgElement.src = `${MY_SERVER}/static/images/placeholder.png`;
+            };
+
+            // Create a div for the card body
+            const cardBody = document.createElement('div');
+            cardBody.className = 'card-body';
+
+            // Create a div for the product details
+            const detailsContainer = document.createElement('div');
+            detailsContainer.innerHTML = `
+            <h5 class="card-title">${product.name}</h5>
+            <p class="card-text">Description: ${product.desc}</p>
+            <p class="card-text">Price: $${product.price}</p>
+            <p class="card-text">Category: [${product.category}] - ${GetCategoryName(product.category)}</p>
+        `;
+
+            // Create the "Manage" button
+            const manageButton = document.createElement('button');
+            manageButton.className = 'btn btn-sm btn-primary shorter-button'; // Add a custom class
+            manageButton.innerText = 'Manage';
+            manageButton.onclick = function () {
+                manage_product(product.id);
+            };
+
+            // Append the imgElement to the card body
+            cardBody.appendChild(imgElement);
+
+            // Append the detailsContainer to the card body
+            cardBody.appendChild(detailsContainer);
+
+            // Append the manageButton to the card body
+            cardBody.appendChild(manageButton);
+
+            // Append the card body to the card
+            card.appendChild(cardBody);
+
+            // Append the card to the column
+            col.appendChild(card);
+
+            // Append the column to the row
+            row.appendChild(col);
+        });
+
+        // Append the row to the productList
+        productList.appendChild(row);
+    }
+
+
+    let currentProduct;
+
+    function manage_product(product) {
+        let fproduct = GetProduct(product)
+        if (fproduct) {
+            currentProduct = fproduct;
+            $('#productDetails').text(`[${fproduct.id} - ${fproduct.name}]`);
+            $('#manageProductModal').modal('show');
+        } else {
+            Message("Product Was Not Found", "error")
+        }
+
+    }
+
+    function editProduct() {
+        // Add logic to handle edit operation
+        if (currentProduct) {
+            const isConfirmed = confirm("Are you sure you want to delete this product?");
+            if (isConfirmed) {
+                // User confirmed, proceed with the delete operation
+                console.log('Editing product ID:', currentProduct.id);
+                // Add your delete logic here
+            } else {
+                console.log('Delete operation cancelled.');
+            }
+        } else {
+            console.log('Edit product Not Found');
+        }
+
+    }
+
+    async function deleteProduct() {
+        // Add logic to handle delete operation
+        if (currentProduct) {
+            const isConfirmed = confirm("Are you sure you want to delete this product?");
+            if (isConfirmed) {
+
+                console.log('Deleting product ID:', currentProduct.id);
+                await fetch(`${MY_SERVER}/pmanagement/${currentProduct.id}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${myToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Message(data.message, "success");
+                        } else {
+                            Message(data.message, "error");
+                        }
+
+                    })
+                    .catch(error => {
+                        Message("Couldn't Delete The Selected Item.", "error");
+                        console.error('Error:', error);
+                    });
+            } else {
+                console.log('Delete operation cancelled.');
+            }
+        } else {
+            console.log('Delete product Not Found');
+        }
+    }
+
+    function GetProduct(product) {
+        const foundProduct = allproducts.find(p => p.id === product);
+        return foundProduct ? foundProduct : null;
+    }
+
+    function GetCategoryName(category) {
+        const foundCategory = allcategories.find(cat => cat.id === category);
+        return foundCategory ? foundCategory.desc : 'Category Not Found';
+    }
+
 </script>
+
 </html>

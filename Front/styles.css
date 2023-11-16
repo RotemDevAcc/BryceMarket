@@ -42,6 +42,18 @@ header {
     background-color: #333;
 }
 
+.dark-mode .modal-header {
+    color: #ffffff !important;
+    /* Set the text color to white in dark mode */
+    background-color: #333;
+}
+.dark-mode .modal-body {
+    color: #ffffff !important;
+    /* Set the text color to white in dark mode */
+    background-color: #333;
+}
+
+
 
 .dark-mode .card {
     background-color: #333;
@@ -51,6 +63,13 @@ header {
     background-color: #333;
 }
 
+
 .dark-mode .list-group-item {
     background-color: #161616;
+}
+
+.shorter-button {
+    height: 25px; /* Adjust the height as needed */
+    display: flex;
+    align-items: center;
 }
