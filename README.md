@@ -1,7 +1,7 @@
 "# BryceMarket" 
 # Project Name
 
-Description of your project.
+A Supermarket System Using Django
 
 ## Table of Contents
 
@@ -16,7 +16,10 @@ Description of your project.
 
 ## Features
 
-- List key features and functionalities of your project.
+- Beautiful looking UI Using Bootstrap
+- The Customer can buy products add them manually to his shopping cart and then buy them all at once
+- a receipt is made with details about every purchase
+- Secured Against SQL Injections etc...
 
 ## Getting Started
 
