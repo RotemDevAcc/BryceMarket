@@ -9,7 +9,9 @@ from rest_framework.response import Response
 from django.contrib.auth.models import User
 from .models import Product, Category, Receipt
 from .serializer import ProductSerializer, CategorySerializer, ReceiptSerializer
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.storage import default_storage
 import json
 from decimal import Decimal
 
@@ -215,27 +217,67 @@ class PManagemetView(APIView):
         Handle POST requests to create a new Task object
         """
 
-        serializer = CategorySerializer(data=request.data, context={'user': request.user})
+        serializer = ProductSerializer(data=request.data, context={'user': request.user})
         if serializer.is_valid():
+            image_file = request.data.get('img')
+            
+            if image_file:
+                # Check file format and size
+                allowed_formats = ['.png']
+                max_size = 2 * 1024 * 1024  # 2MB
+                
+                if not image_file.name.lower().endswith(tuple(allowed_formats)):
+                    raise ValidationError("Please upload a PNG image.")
+                
+                if image_file.size > max_size:
+                    raise ValidationError("Image size must be less than 2MB.")
+                
+                request.data['img'] = SimpleUploadedFile(image_file.name, image_file.read())
+                
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-   
+            return Response({"success": True, "message": f"The Product Was Added Successfully"})
+            #return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response({"success": False, "message": f"The Product couldn't be added"})
+        #return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     def put(self, request, pk):
         """
-        Handle PUT requests to update an existing Task object
+        Handle PUT requests to update an existing product
         """
-        category = Category.objects.get(pk=pk)
-        serializer = CategorySerializer(category, data=request.data)
+        product = Product.objects.get(pk=pk)
+        serializer = ProductSerializer(product, data=request.data)
         if serializer.is_valid():
+            # Handle the uploaded image file
+            image_file = request.data.get('image')
+            
+            if image_file:
+                # Check file format and size
+                allowed_formats = ['.png']
+                max_size = 2 * 1024 * 1024  # 2MB
+                
+                if not image_file.name.lower().endswith(tuple(allowed_formats)):
+                    raise ValidationError("Please upload a PNG image.")
+                
+                if image_file.size > max_size:
+                    raise ValidationError("Image size must be less than 2MB.")
+                
+                product.img = SimpleUploadedFile(image_file.name, image_file.read())
+
             serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            # return Response(serializer.data)
+            return Response({"success":True,"message":f"Product {product.name} Has been updated successfully"})
+    
+        return Response({"success":False,"message":"The Product was not found."})
    
     def delete(self, request, pk):
         try:
             product = Product.objects.get(pk=pk)
+            
+            # Check if the product's image is not the default placeholder
+            if product.img.name != '/placeholder.png':
+                # Delete the image file from storage
+                default_storage.delete(product.img.name)
+
             product.delete()
-            return JsonResponse({"success": True, "message": f"Product {pk} Was Deleted Successfully"})
+            return Response({"success": True, "message": f"Product {pk} Was Deleted Successfully"})
         except Product.DoesNotExist:
-            return JsonResponse({"success": False, "message": f"Product {pk} not found"})
+            return Response({"success": False, "message": f"Product {pk} not found"})
