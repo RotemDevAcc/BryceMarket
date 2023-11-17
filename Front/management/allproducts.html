@@ -12,9 +12,10 @@
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 </head>
 
-<body>
+<body onload="Init()">
     <div class="text-center mt-3">
         <button id="darkModeButton" class="btn btn-secondary">Dark Mode</button>
+        <button id="addProductButton" onclick="addProduct()" class="btn btn-success">Add Product</button>
     </div>
 
     <header class="bg-dark text-white">
@@ -65,42 +66,128 @@
             </div>
         </div>
     </div>
+
+
+    <div class="modal fade" id="editProductModal" tabindex="-1" role="dialog" aria-labelledby="editProductModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editProductModalLabel">
+                        Edit Product
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="editProductForm">
+                        <label for="editProductName">Name:</label>
+                        <input type="text" id="editProductName" name="editProductName" value="" required>
+                        <br>
+                        <label for="editProductDesc">Description:</label>
+                        <input type="text" id="editProductDesc" name="editProductDesc" value="" required>
+                        <br>
+                        <label for="editProductPrice">Price:</label>
+                        <input type="number" id="editProductPrice" name="editProductPrice" value="" required>
+                        <br>
+                        <label for="edit_category">Category:</label>
+                        <select name="category" required="" id="edit_category">
+                            <option value="" selected>---------</option>
+
+                        </select>
+                        <br>
+                        <label for="editProductImage">Image (PNG format, max 2MB):</label>
+                        <input type="file" id="editProductImage" name="editProductImage" accept=".png" required>
+
+                        <hr>
+
+                        <button type="button" class="btn btn-primary" onclick="submitEditForm()">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="addProductModal" tabindex="-1" role="dialog" aria-labelledby="addProductModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addProductModalLabel">
+                        Add Product
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="addProductForm">
+                        <label for="addProductName">Name:</label>
+                        <input type="text" id="addProductName" name="addProductName" value="" required>
+                        <br>
+                        <label for="addProductDesc">Description:</label>
+                        <input type="text" id="addProductDesc" name="addProductDesc" value="" required>
+                        <br>
+                        <label for="addProductPrice">Price:</label>
+                        <input type="number" id="addProductPrice" name="addProductPrice" value="" required>
+                        <br>
+                        <label for="addProductImage">Image (PNG format, max 2MB):</label>
+                        <input type="file" id="addProductImage" name="addProductImage" accept=".png" required>
+                        <br>
+                        <label for="add_category">Category:</label>
+                        <select name="category" required="" id="add_category">
+                            <option value="" selected>---------</option>
+
+                        </select>
+                        <hr>
+
+                        <button type="button" class="btn btn-primary" onclick="submitAddForm()">Add New Product</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 <script src="../settings.js"></script>
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script>
-
+    let currentProduct;
     let allproducts = {}
     let allcategories = {}
-    if (myToken && myToken !== "") {
-        fetch(`${MY_SERVER}/pmanagement/`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${myToken}`,
-                'Content-Type': 'application/json',
-            },
-        })
-            .then(handleResponse)
-            .then(data => {
-                const productlist = data.products;
-                const categories = data.categories;
-
-                // Sort the product list by id
-                productlist.sort((a, b) => a.id - b.id);
-                // Sort the categories by id
-                categories.sort((a, b) => a.id - b.id);
-
-                allproducts = productlist
-                allcategories = categories
-                renderProducts(productlist, categories);
+    const Init = async ()=>{
+        if (myToken && myToken !== "") {
+            fetch(`${MY_SERVER}/pmanagement/`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${myToken}`,
+                    'Content-Type': 'application/json',
+                },
             })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-    } else {
-        window.location.href = '../index.html';
+                .then(handleResponse)
+                .then(data => {
+
+                    productList.innerHTML = ""
+                    const productlist = data.products;
+                    const categories = data.categories;
+
+                    // Sort the product list by id
+                    productlist.sort((a, b) => a.id - b.id);
+                    // Sort the categories by id
+                    categories.sort((a, b) => a.id - b.id);
+
+                    allproducts = productlist
+                    allcategories = categories
+                    renderProducts(productlist, categories);
+                    renderCategories(categories)
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        } else {
+            window.location.href = '../index.html';
+        }
     }
 
     function handleResponse(res) {
@@ -184,8 +271,35 @@
         productList.appendChild(row);
     }
 
+    function renderCategories(categories) {
+        const addCategorySelect = document.getElementById('add_category');
+        const editCategorySelect = document.getElementById('edit_category');
+        // Clear existing options
+        addCategorySelect.innerHTML = '<option value="" selected>---------</option>';
+        editCategorySelect.innerHTML = '<option value="" selected>---------</option>';
 
-    let currentProduct;
+        // Add options based on 'allcategories'
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.id;
+            option.textContent = category.desc;
+            addCategorySelect.appendChild(option);
+        });
+
+
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.id;
+            option.textContent = category.desc;
+            editCategorySelect.appendChild(option);
+        });
+
+        
+
+    }
+
+
+
 
     function manage_product(product) {
         let fproduct = GetProduct(product)
@@ -200,20 +314,180 @@
     }
 
     function editProduct() {
-        // Add logic to handle edit operation
         if (currentProduct) {
-            const isConfirmed = confirm("Are you sure you want to delete this product?");
-            if (isConfirmed) {
-                // User confirmed, proceed with the delete operation
-                console.log('Editing product ID:', currentProduct.id);
-                // Add your delete logic here
-            } else {
-                console.log('Delete operation cancelled.');
-            }
+            // Set the current product details in the form fields
+            // Example: document.getElementById('editProductName').value = currentProduct.name;
+
+            // Show the editProductModal
+            $('#editProductModal').modal('show');
         } else {
             console.log('Edit product Not Found');
         }
+    }
 
+    function submitEditForm() {
+        const name = document.getElementById('editProductName').value;
+        const desc = document.getElementById('editProductDesc').value;
+        const price = document.getElementById('editProductPrice').value;
+        const imageInput = document.getElementById('editProductImage');
+        const imageFile = imageInput.files[0];
+        const category = document.getElementById('edit_category').value;
+
+        if (!name || !desc || !price || !imageFile || !category) {
+            Message("One of the arguments is missing", "error");
+            $('#editProductModal').modal('hide');
+            return;
+        }
+
+
+        // Check file format and size
+        const allowedFormats = ['.png'];
+        const maxSize = 2 * 1024 * 1024; // 2MB
+        // Use FileReader to read the file and check the format
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            const arrayBuffer = e.target.result;
+            const uint8Array = new Uint8Array(arrayBuffer);
+
+            // Check the file signature for PNG format
+            if (!(uint8Array && uint8Array.length > 8 && uint8Array[0] === 137 && uint8Array[1] === 80 && uint8Array[2] === 78 && uint8Array[3] === 71
+                && uint8Array[4] === 13 && uint8Array[5] === 10 && uint8Array[6] === 26 && uint8Array[7] === 10)) {
+                Message("Please upload a PNG image.", "error");
+                return;
+            }
+
+            if (imageFile.size > maxSize) {
+                Message("Image size must be less than 2MB.", "error");
+                return;
+            }
+
+            // Continue with the rest of the code for form submission
+            console.log('Submitting edit form');
+            // Use fetch or other methods to send the form data to the server
+
+            // After submitting, close the modal
+            $('#editProductModal').modal('hide');
+        };
+
+        reader.readAsArrayBuffer(imageFile);
+
+        // Create a FormData object to handle file uploads
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('desc', desc);
+        formData.append('price', price);
+        formData.append('category', category);
+        formData.append('image', imageFile);
+
+        // Use fetch or other methods to send the form data to the server
+        fetch(`${MY_SERVER}/pmanagement/${currentProduct.id}/`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${myToken}`,
+            },
+            body: formData, // Use FormData as the body to handle file uploads
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Message(data.message, "success");
+                    Init()
+                } else {
+                    Message(data.message, "error");
+                }
+            })
+            .catch(error => {
+                Message("Couldn't update the product.", "error");
+                console.error('Error:', error);
+            });
+
+        $('#editProductModal').modal('hide');
+    }
+
+
+    function addProduct() {
+        $('#addProductModal').modal('show');
+    }
+
+    function submitAddForm() {
+        const name = document.getElementById('addProductName').value;
+        const desc = document.getElementById('addProductDesc').value;
+        const price = document.getElementById('addProductPrice').value;
+        const imageInput = document.getElementById('addProductImage');
+        const imageFile = imageInput.files[0];
+        const category = document.getElementById('add_category').value;
+
+        if (!name || !desc || !price || !imageFile || !category) {
+            Message("One of the arguments is missing", "error");
+            $('#addProductModal').modal('hide');
+            return;
+        }
+
+
+        // Check file format and size
+        const allowedFormats = ['.png'];
+        const maxSize = 2 * 1024 * 1024; // 2MB
+        // Use FileReader to read the file and check the format
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            const arrayBuffer = e.target.result;
+            const uint8Array = new Uint8Array(arrayBuffer);
+
+            // Check the file signature for PNG format
+            if (!(uint8Array && uint8Array.length > 8 && uint8Array[0] === 137 && uint8Array[1] === 80 && uint8Array[2] === 78 && uint8Array[3] === 71
+                && uint8Array[4] === 13 && uint8Array[5] === 10 && uint8Array[6] === 26 && uint8Array[7] === 10)) {
+                Message("Please upload a PNG image.", "error");
+                return;
+            }
+
+            if (imageFile.size > maxSize) {
+                Message("Image size must be less than 2MB.", "error");
+                return;
+            }
+
+            // Continue with the rest of the code for form submission
+            console.log('Submitting add form');
+            // Use fetch or other methods to send the form data to the server
+
+            // After submitting, close the modal
+            $('#addProductModal').modal('hide');
+        };
+
+        reader.readAsArrayBuffer(imageFile);
+
+        // Create a FormData object to handle file uploads
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('desc', desc);
+        formData.append('price', price);
+        formData.append('category', category);
+        formData.append('img', imageFile);
+
+        // Use fetch or other methods to send the form data to the server
+        fetch(`${MY_SERVER}/pmanagement/`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${myToken}`,
+            },
+            body: formData, // Use FormData as the body to handle file uploads
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Message(data.message, "success");
+                    Init()
+                } else {
+                    Message(data.message, "error");
+                }
+            })
+            .catch(error => {
+                Message("Couldn't update the product.", "error");
+                console.error('Error:', error);
+            });
+
+        $('#addProductModal').modal('hide');
     }
 
     async function deleteProduct() {
@@ -221,7 +495,7 @@
         if (currentProduct) {
             const isConfirmed = confirm("Are you sure you want to delete this product?");
             if (isConfirmed) {
-
+                $('#manageProductModal').modal('hide');
                 console.log('Deleting product ID:', currentProduct.id);
                 await fetch(`${MY_SERVER}/pmanagement/${currentProduct.id}/`, {
                     method: 'DELETE',
@@ -234,6 +508,7 @@
                     .then(data => {
                         if (data.success) {
                             Message(data.message, "success");
+                            Init()
                         } else {
                             Message(data.message, "error");
                         }
