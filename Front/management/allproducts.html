@@ -16,6 +16,7 @@
     <div class="text-center mt-3">
         <button id="darkModeButton" class="btn btn-secondary">Dark Mode</button>
         <button id="addProductButton" onclick="addProduct()" class="btn btn-success">Add Product</button>
+        <button id="addCategoryButton" onclick="addCategory()" class="btn btn-success">Add Category</button>
     </div>
 
     <header class="bg-dark text-white">
@@ -147,6 +148,30 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="addCategoryModal" tabindex="-1" role="dialog" aria-labelledby="addCategoryModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCategoryModalLabel">
+                        Add Category
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="addCategoryForm">
+                        <label for="addCategoryDesc">Description:</label>
+                        <input type="text" id="addCategoryDesc" name="addCategoryDesc" value="" required>
+                        <hr>
+
+                        <button type="button" class="btn btn-primary" onclick="submitAddCatForm()">Add New Category</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 <script src="../settings.js"></script>
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
@@ -156,7 +181,7 @@
     let currentProduct;
     let allproducts = {}
     let allcategories = {}
-    const Init = async ()=>{
+    const Init = async () => {
         if (myToken && myToken !== "") {
             fetch(`${MY_SERVER}/pmanagement/`, {
                 method: 'GET',
@@ -294,7 +319,7 @@
             editCategorySelect.appendChild(option);
         });
 
-        
+
 
     }
 
@@ -405,7 +430,45 @@
         $('#editProductModal').modal('hide');
     }
 
+    function addCategory() {
+        $('#addCategoryModal').modal('show');
+    }
 
+    function submitAddCatForm() {
+        const desc = document.getElementById('addCategoryDesc').value;
+        if (!desc) {
+            Message("One of the arguments is missing", "error");
+            $('#addCategoryModal').modal('hide');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('desc', desc);
+        formData.append('type', "category");
+        // Use fetch or other methods to send the form data to the server
+        fetch(`${MY_SERVER}/pmanagement/`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${myToken}`,
+            },
+            body: formData, // Use FormData as the body to handle file uploads
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Message(data.message, "success");
+                    Init()
+                } else {
+                    Message(data.message, "error");
+                }
+            })
+            .catch(error => {
+                Message("Couldn't add the category.", "error");
+                console.error('Error:', error);
+            });
+
+        $('#addCategoryModal').modal('hide');
+    }
     function addProduct() {
         $('#addProductModal').modal('show');
     }
@@ -464,6 +527,7 @@
         formData.append('price', price);
         formData.append('category', category);
         formData.append('img', imageFile);
+        formData.append('type', "product");
 
         // Use fetch or other methods to send the form data to the server
         fetch(`${MY_SERVER}/pmanagement/`, {
