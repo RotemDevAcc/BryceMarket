@@ -6,9 +6,9 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.contrib.auth.models import User
-from .models import Product, Category, Receipt
-from .serializer import ProductSerializer, CategorySerializer, ReceiptSerializer
+#from django.contrib.auth.models import User
+from .models import UserProfile, Product, Category, Receipt
+from .serializer import UserSerializer, ProductSerializer, CategorySerializer, ReceiptSerializer
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.storage import default_storage
@@ -93,7 +93,7 @@ def productlist(request):
                 return Response({"state": "fail", "msg": "ERROR, Something went wrong."})
 
         if totalPrice == price:
-            user_instance = User.objects.get(username=user)
+            user_instance = UserProfile.objects.get(username=user)
 
             receipt_data = {
                 'products': json.dumps(PurchasedItems),
@@ -129,18 +129,16 @@ def receipts(request):
     for receipt in receipts:
 
         try:
-            recuser = User.objects.get(id=receipt.user_id)
-        except User.DoesNotExist:
+            recuser = UserProfile.objects.get(id=receipt.user_id)
+            products_list = json.loads(receipt.products)
+            payload.append({
+                "id": receipt.id,
+                "price": receipt.price,
+                "products": products_list,
+                "recuser": {"userid": recuser.id, "username": recuser.username}
+            })
+        except UserProfile.DoesNotExist:
             return Response({"state": "fail", "msg": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-        recuser = User.objects.get(id=receipt.user_id)
-        # Convert the products string to a list of dictionaries
-        products_list = json.loads(receipt.products)
-        payload.append({
-            "id": receipt.id,
-            "price": receipt.price,
-            "products": products_list,
-            "recuser": {"userid": recuser.id, "username": recuser.username}
-        })
     return Response({"state":"success","payload":payload,"products":allproducts,"msg":"Success"})
 
 @permission_classes([IsAuthenticated, IsAdminUser])
@@ -216,28 +214,39 @@ class PManagemetView(APIView):
         """
         Handle POST requests to create a new Task object
         """
-
-        serializer = ProductSerializer(data=request.data, context={'user': request.user})
-        if serializer.is_valid():
-            image_file = request.data.get('img')
-            
-            if image_file:
-                # Check file format and size
-                allowed_formats = ['.png']
-                max_size = 2 * 1024 * 1024  # 2MB
+        reqtype = request.data.get('type')
+        if not reqtype or reqtype == None:
+            return Response({"success": False, "message": f"Request Failed"})
+        
+        if reqtype == "product":
+             
+            serializer = ProductSerializer(data=request.data, context={'user': request.user})
+            if serializer.is_valid():
+                image_file = request.data.get('img')
                 
-                if not image_file.name.lower().endswith(tuple(allowed_formats)):
-                    raise ValidationError("Please upload a PNG image.")
-                
-                if image_file.size > max_size:
-                    raise ValidationError("Image size must be less than 2MB.")
-                
-                request.data['img'] = SimpleUploadedFile(image_file.name, image_file.read())
-                
-            serializer.save()
-            return Response({"success": True, "message": f"The Product Was Added Successfully"})
-            #return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response({"success": False, "message": f"The Product couldn't be added"})
+                if image_file:
+                    # Check file format and size
+                    allowed_formats = ['.png']
+                    max_size = 2 * 1024 * 1024  # 2MB
+                    
+                    if not image_file.name.lower().endswith(tuple(allowed_formats)):
+                        raise ValidationError("Please upload a PNG image.")
+                    
+                    if image_file.size > max_size:
+                        raise ValidationError("Image size must be less than 2MB.")
+                    
+                    request.data['img'] = SimpleUploadedFile(image_file.name, image_file.read())
+                    
+                serializer.save()
+                return Response({"success": True, "message": f"The Product Was Added Successfully"})
+                #return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response({"success": False, "message": f"The Product couldn't be added"})
+        elif reqtype == "category":
+            serializer = CategorySerializer(data=request.data, context={'user': request.user})
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"success": True, "message": f"The Product Was Added Successfully"})
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         #return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     def put(self, request, pk):
         """

@@ -1,8 +1,11 @@
 from rest_framework import serializers
-from .models import Product,Category, Receipt
+from .models import UserProfile,Product,Category, Receipt
 
 
-
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ('__all__')
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
