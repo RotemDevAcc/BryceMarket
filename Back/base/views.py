@@ -6,9 +6,11 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
 from rest_framework.response import Response
-#from django.contrib.auth.models import User
-from .models import UserProfile, Product, Category, Receipt
-from .serializer import UserSerializer, ProductSerializer, CategorySerializer, ReceiptSerializer
+# from django.contrib.auth.models import User
+# from .models import UserProfile, Product, Category, Receipt
+from .models import MarketUser, Product, Category, Receipt
+from .serializer import ProductSerializer, CategorySerializer, ReceiptSerializer
+# from .serializer import UserSerializer, ProductSerializer, CategorySerializer, ReceiptSerializer
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.storage import default_storage
@@ -93,7 +95,7 @@ def productlist(request):
                 return Response({"state": "fail", "msg": "ERROR, Something went wrong."})
 
         if totalPrice == price:
-            user_instance = UserProfile.objects.get(username=user)
+            user_instance = MarketUser.objects.get(username=user)
 
             receipt_data = {
                 'products': json.dumps(PurchasedItems),
@@ -129,7 +131,7 @@ def receipts(request):
     for receipt in receipts:
 
         try:
-            recuser = UserProfile.objects.get(id=receipt.user_id)
+            recuser = MarketUser.objects.get(id=receipt.user_id)
             products_list = json.loads(receipt.products)
             payload.append({
                 "id": receipt.id,
@@ -137,7 +139,7 @@ def receipts(request):
                 "products": products_list,
                 "recuser": {"userid": recuser.id, "username": recuser.username}
             })
-        except UserProfile.DoesNotExist:
+        except MarketUser.DoesNotExist:
             return Response({"state": "fail", "msg": "User not found"}, status=status.HTTP_404_NOT_FOUND)
     return Response({"state":"success","payload":payload,"products":allproducts,"msg":"Success"})
 
