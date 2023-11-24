@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
@@ -12,6 +12,7 @@ from .models import MarketUser, Product, Category, Receipt
 from .serializer import ProductSerializer, CategorySerializer, ReceiptSerializer
 # from .serializer import UserSerializer, ProductSerializer, CategorySerializer, ReceiptSerializer
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.contrib.auth.password_validation import validate_password
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.storage import default_storage
 import json
@@ -292,3 +293,30 @@ class PManagemetView(APIView):
             return Response({"success": True, "message": f"Product {pk} Was Deleted Successfully"})
         except Product.DoesNotExist:
             return Response({"success": False, "message": f"Product {pk} not found"})
+        
+
+@permission_classes([AllowAny])
+class RegistrationView(APIView):
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+
+        username = data.get('username')
+        password = data.get('password')
+        email = data.get('email')
+        gender = data.get('gender')
+        date_of_birth = data.get('date')
+
+        try:
+            validate_password(password)
+        except ValidationError as e:
+            return Response({'success': False, 'message': str(e)}, status=400)
+
+        user = MarketUser.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            gender=gender,
+            date_of_birth=date_of_birth
+        )
+
+        return Response({'success': True, 'message': 'Registration successful'})
