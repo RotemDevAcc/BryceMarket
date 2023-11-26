@@ -27,6 +27,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Add custom claims
         token['username'] = user.username
         token['email'] = user.email
+        token['is_staff'] = user.is_staff or None
+
         # ...
  
         return token
@@ -320,3 +322,41 @@ class RegistrationView(APIView):
         )
 
         return Response({'success': True, 'message': 'Registration successful'})
+    
+
+from django.core.mail import send_mail
+
+@permission_classes([AllowAny])
+@api_view(["POST"])
+def recovery(request):
+    data = json.loads(request.body)
+    email = data.get('email')
+    try:
+        user = MarketUser.objects.get(email=email)
+        YOUR_RESET_URL = ""
+        # Generate a unique token for password reset
+        # You can use a library like Django Rest Framework's default token generator
+        # or implement your own logic to generate a secure token
+        reset_token = generate_reset_token(user)
+
+        # Send an email with a link to the password reset view
+        subject = 'Password Reset'
+        message = f'Click the following link to reset your password: {YOUR_RESET_URL}?token={reset_token}'
+        from_email = 'guyron2000@gmail.com'  # Update with your email
+        recipient_list = [email]
+
+        send_mail(subject, message, from_email, recipient_list)
+
+        return Response({'success': True, 'message': f'Password Recovery Sent To {email}'})
+    except MarketUser.DoesNotExist:
+        #return Response({"success": False, "message": "Email not found"}, status=status.HTTP_404_NOT_FOUND)
+        # Pretending we sent the email so that the client won't use this information against us
+        return Response({'success': True, 'message': f'Password Recovery Sent To {email}'})
+    except ValidationError as e:
+        print(str(e))
+        return Response({'success': False, 'message': "Something Went Wrong"}, status=400)
+    
+def generate_reset_token(user):
+    # Implement your logic to generate a secure token
+    # You can use Django Rest Framework's default token generator or other methods
+    return 'your_generated_token'
