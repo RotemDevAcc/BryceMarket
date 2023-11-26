@@ -2,9 +2,40 @@
 const MY_SERVER = "http://127.0.0.1:8000";
 let myToken = "";
 
-let variable = sessionStorage.getItem("token")
+const variable = sessionStorage.getItem("token")
 if (variable)
     myToken = variable
+
+let myDetails = {}
+const details = sessionStorage.getItem("userDetails")
+if (details) {
+    myDetails = JSON.parse(details)
+    const loginid = document.getElementById("loginnav")
+    if (loginid) {
+        loginid.remove();
+        mainnav.innerHTML += 
+        `
+        <li class="nav-item">
+            <a class="nav-link" onclick="Logout()"style="cursor: pointer;">Logout</a>
+        </li>`
+    }
+    if (myDetails.is_staff) {
+        const mainnav = document.getElementById("mainnav")
+        if (mainnav) {
+            mainnav.innerHTML += `
+            <li class="nav-item">
+                <a class="nav-link" href="management/admin.html">Admin</a>
+            </li>`
+        }
+    }
+}
+
+function Logout(){
+    if (!myToken) return
+    sessionStorage.removeItem("token")
+    sessionStorage.removeItem("userDetails")
+    window.location.href = 'index.html';
+}
 
 function toggleDarkMode() {
     const body = document.body;
@@ -19,7 +50,7 @@ function toggleDarkMode() {
         darkModeButton.innerText = "Dark Mode"
     }
     const isDarkMode = body.classList.contains("dark-mode");
-    localStorage.setItem("darkmode",isDarkMode)
+    localStorage.setItem("darkmode", isDarkMode)
 }
 
 const darkModeButton = document.getElementById("darkModeButton");
@@ -43,16 +74,16 @@ function DarkMode() {
 
 DarkMode()
 
-function Message(message, type){
+function Message(message, type) {
 
     // If type not selected play a default color
-    if(!type){
+    if (!type) {
         type = "linear-gradient(to right, #00b09b, #96c93d)"
-    }else if (type == "error"){
+    } else if (type == "error") {
         type = "linear-gradient(to right, #F74141, #B30000)"
-    }else if (type == "info"){
+    } else if (type == "info") {
         type = "linear-gradient(to right, #25A9F6, #0067CE)"
-    }else if (type == "success"){
+    } else if (type == "success") {
         type = "linear-gradient(to right, #00A510, #167e21)"
     }
     Toastify({

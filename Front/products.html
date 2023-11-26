@@ -19,7 +19,7 @@
         <div class="container">
             <h1>Our Products</h1>
             <nav>
-                <ul class="nav">
+                <ul class="nav" id="mainnav">
                     <li class="nav-item">
                         <a class="nav-link" href="index.html">Home</a>
                     </li>
@@ -29,12 +29,8 @@
                     <li class="nav-item">
                         <a class="nav-link" href="contact.html">Contact</a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item" id = "loginnav">
                         <a class="nav-link" href="login.html">Login</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="management/admin.html">Admin</a>
-                        <!-- <a class="nav-link" href="http://127.0.0.1:8000/admin">Admin</a> -->
                     </li>
                 </ul>
             </nav>
@@ -43,12 +39,25 @@
 
     <h3 id="header" style="display: none;"></h3>
     <div class="container">
+        <nav class="navbar navbar-expand-lg">
+            <span class="navbar-brand">Categories:</span>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav" id="navCatList">
+                </ul>
+            </div>
+        </nav>
         <div class="row">
             <div class="col-md-8">
                 <!-- Products list -->
                 <div id="productlist"></div>
             </div>
             <div class="col-md-4">
+                <div class="input-group mb-3">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Search...">
+                </div>
                 <!-- Shopping cart side card -->
                 <div class="card">
                     <div class="card-header">
@@ -58,8 +67,8 @@
                         <!-- Cart items will be added here -->
                     </ul>
                     <div class="card-body">
-                        <div id = "priceheader" class="card-header">
-                            
+                        <div id="priceheader" class="card-header">
+
                         </div>
                         <button class="btn btn-primary" onclick="checkout()">Checkout</button>
                         <button class="btn btn-danger" onclick="clearCart()">Clear Cart</button>
@@ -77,7 +86,9 @@
     <script>
         let cart = {};
         let shoppingproducts = []
-
+        let products = []
+        let categories = []
+        let categorytype = {}
         async function ShowProducts() {
             if (!myToken || myToken == "") {
                 productlist.innerHTML = `
@@ -90,7 +101,7 @@
                 `;
                 return
             }
-            
+
             const response = await fetch(MY_SERVER + "/productslist/", {
                 method: 'GET', // or the HTTP method you need (GET, POST, etc.)
                 headers: {
@@ -125,17 +136,29 @@
                 return;
             }
             const answer = await response.json();
-            const products = answer.products
-            const categories = answer.categories
+            products = answer.products
+            categories = answer.categories
 
-            let categorytype = {}
+            navCatList.innerHTML = `
+                <li class="nav-item">
+                    <button class="nav-link btn btn-link" onclick="filterProductsByCategory('all')">All Products</button>
+                </li>
+            `
+            
             categories.map(function (category) {
                 categorytype[category.id] = category.desc
+                navCatList.innerHTML += `
+                    <li class="nav-item">
+                        <button class="nav-link btn btn-link" onclick="filterProductsByCategory(${category.id})">${category.desc}</button>
+                    </li>
+                `
             })
+
+            
             shoppingproducts = products
             productlist.innerHTML = ""; // Clear the productlist
 
-            if (!products.length || products.length == 0){
+            if (!products.length || products.length == 0) {
                 productlist.innerHTML = `
                         <div class="alert alert-warning alert-dismissible fade show" role="alert">
                             No Products Are Available Right Now.
@@ -186,23 +209,47 @@
             updateCartDisplay();
         }
 
+        function removeFromCart(productId) {
+            // Check if the product is in the cart
+            if (cart[productId]) {
+                // If the count is greater than 1, decrease the count
+                if (cart[productId].count > 1) {
+                    cart[productId].count--;
+                } else {
+                    // If the count is 1, remove the product from the cart
+                    delete cart[productId];
+                }
+
+                // Update the cart display
+                updateCartDisplay();
+            }
+        }
+
         function updateCartDisplay() {
             const cartItems = document.getElementById('cart-items');
             cartItems.innerHTML = ''; // Clear the existing items
             let displayprice = 0
+            let isEmpty = true
             for (const productId in cart) {
                 if (cart.hasOwnProperty(productId)) {
+                    isEmpty = false
                     const product = cart[productId];
                     const cartItem = document.createElement('li');
                     cartItem.classList.add('list-group-item');
-                    //const totalPrice = (product.price * product.count).toFixed(2);
                     const totalPrice = Number((product.price * product.count).toFixed(2));
-                    cartItem.innerHTML = `${product.name} (Count: ${product.count}) - $${totalPrice}`;
+                    cartItem.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>${product.name} (Count: ${product.count}) - $${totalPrice}</span>
+                            <button class="btn btn-sm btn-danger" onclick="removeFromCart('${productId}')">X</button>
+                        </div>
+                    `;
                     displayprice += totalPrice
                     cartItems.appendChild(cartItem);
                     priceheader.innerText = `$${displayprice.toFixed(2)}`
                 }
             }
+
+            if(isEmpty) priceheader.innerText = ""
 
             SaveCart()
         }
@@ -259,7 +306,7 @@
                     }
                 }
                 localStorage.removeItem("cart")
-                priceheader.innerText = "$0.0"
+                priceheader.innerText = ""
             } else {
                 for (const productId in cart) {
                     console.log(productId)
@@ -297,6 +344,84 @@
                 }
             }
         }
+
+        function filterProductsByCategory(category){
+            const query = category
+
+            // Use array.filter to filter the data based on the query
+            const filteredData = category != "all" ? products.filter(product => product.category==category) : products;
+            const resultsList = document.getElementById("productlist");
+            // Clear previous results
+            resultsList.innerHTML = "";
+
+            // Display the filtered results
+            let index = 0
+            filteredData.forEach(product => {
+                resultsList.innerHTML += `
+                <div class="card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="${MY_SERVER}${product.img}" alt="Product Image" class="img-fluid">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">${product.name}</h5>
+                                <p class="card-text">Description: ${product.desc}</p>
+                                <p class="card-text">Category: ${categorytype[product.category]}</p>
+                                <p class="card-text">Price: $${product.price}</p>
+                                <button class="btn btn-primary" onclick="OnProductBuy(${index})">Add To Cart</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            index++
+            });
+        }
+
+        function updateResults() {
+            if (!products) return;
+            const searchInput = document.getElementById("searchInput");
+            const resultsList = document.getElementById("productlist");
+
+            // Get the search query
+            const query = searchInput.value.toLowerCase();
+
+            // Use array.filter to filter the data based on the query
+            const filteredData = products.filter(product => product.name.toLowerCase().includes(query));
+
+            // Clear previous results
+            resultsList.innerHTML = "";
+
+            // Display the filtered results
+            let index = 0
+            filteredData.forEach(product => {
+                resultsList.innerHTML += `
+                <div class="card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="${MY_SERVER}${product.img}" alt="Product Image" class="img-fluid">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">${product.name}</h5>
+                                <p class="card-text">Description: ${product.desc}</p>
+                                <p class="card-text">Category: ${categorytype[product.category]}</p>
+                                <p class="card-text">Price: $${product.price}</p>
+                                <button class="btn btn-primary" onclick="OnProductBuy(${index})">Add To Cart</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            index++
+            });
+        }
+
+        document.getElementById("searchInput").addEventListener("input", updateResults);
+
+        // Initial update to show all data
+        updateResults();
     </script>
 
     <!-- Your other JavaScript functions for cart functionality can be added here -->

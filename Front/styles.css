@@ -68,6 +68,18 @@ header {
     background-color: #161616;
 }
 
+
+.navbar {
+    background-color: #f8f9fa; /* Light background color */
+    color: #000000; /* Light text color */
+}
+
+/* Dark mode styles */
+.dark-mode .navbar {
+    background-color: #343a40; /* Dark background color */
+    color: #ffffff; /* Dark text color */
+}
+
 .shorter-button {
     height: 25px; /* Adjust the height as needed */
     display: flex;
