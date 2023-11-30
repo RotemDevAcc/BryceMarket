@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bryce Market - Profile</title>
+    <!-- Include Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Include custom CSS for dark mode -->
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.css">
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+</head>
+<body>
+    <div class="text-center mt-3">
+        <button id="darkModeButton" class="btn btn-secondary">Dark Mode</button>
+    </div>
+    <header class="bg-dark text-white">
+        <div class="container">
+            <h1>Profile Page</h1>
+            <nav>
+                <ul class="nav" id="mainnav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="products.html">Products</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="contact.html">Contact</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container mt-4">
+        <ul id="profileList" class="list-group">
+            <!-- Receipts will be dynamically added here -->
+        </ul>
+    </div>
+    <script src="scripts/settings.js"></script>
+    <script src="profile.js"></script>
+</body>
+
+</html>

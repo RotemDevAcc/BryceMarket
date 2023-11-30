@@ -360,3 +360,21 @@ def generate_reset_token(user):
     # Implement your logic to generate a secure token
     # You can use Django Rest Framework's default token generator or other methods
     return 'your_generated_token'
+
+@permission_classes([IsAuthenticated])
+@api_view(["POST"])
+def modprofile(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        ruser = request.user
+        rtype = data.get('rtype')
+        if rtype == "picture":
+            user = MarketUser.objects.get(id=user.id)
+            print(user.id)
+            if ruser.id != user.id:
+                return Response({"success":False,'message':"Something Went Wrong(1)"})
+
+            return Response({"success":True,'message':"Picture Changed Successfully"})
+        else:
+            return Response({"success":False,'message':"Something Went Wrong(2)"})
+            

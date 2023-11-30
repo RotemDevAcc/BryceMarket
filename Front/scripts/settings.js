@@ -17,6 +17,9 @@ if (details) {
         `
         <li class="nav-item">
             <a class="nav-link" onclick="Logout()"style="cursor: pointer;">Logout</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="profile.html">Profile</a>
         </li>`
     }
     if (myDetails.is_staff) {
