@@ -9,13 +9,13 @@ from rest_framework.response import Response
 # from django.contrib.auth.models import User
 # from .models import UserProfile, Product, Category, Receipt
 from .models import MarketUser, Product, Category, Receipt
-from .serializer import ProductSerializer, CategorySerializer, ReceiptSerializer
+from .serializer import UserSerializer, ProductSerializer, CategorySerializer, ReceiptSerializer
 # from .serializer import UserSerializer, ProductSerializer, CategorySerializer, ReceiptSerializer
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.contrib.auth.password_validation import validate_password
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.storage import default_storage
-import json
+import json, os
 from decimal import Decimal
 
 
@@ -26,7 +26,12 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
  
         # Add custom claims
         token['username'] = user.username
+        token['firstname'] = user.firstname
+        token['lastname'] = user.lastname
         token['email'] = user.email
+        token['gender'] = user.gender
+        token['dob'] = user.date_of_birth.isoformat() if user.date_of_birth else None
+        token['img'] = str(user.img) or "placeholder.png"
         token['is_staff'] = user.is_staff or None
 
         # ...
@@ -296,17 +301,25 @@ class PManagemetView(APIView):
         except Product.DoesNotExist:
             return Response({"success": False, "message": f"Product {pk} not found"})
         
+#end management
+
+
 
 @permission_classes([AllowAny])
 class RegistrationView(APIView):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
-
         username = data.get('username')
+        user = MarketUser.objects.get(username=username)
+        if user:
+            return Response({'success': False, 'message': "Username Already Used"}, status=400)
+        firstname = data.get('firstname')
+        lastname = data.get('lastname')
         password = data.get('password')
         email = data.get('email')
         gender = data.get('gender')
         date_of_birth = data.get('date')
+        phone_number = data.get('phone_number')
 
         try:
             validate_password(password)
@@ -315,13 +328,15 @@ class RegistrationView(APIView):
 
         user = MarketUser.objects.create_user(
             username=username,
+            firstname=firstname,
+            lastname=lastname,
             email=email,
             password=password,
             gender=gender,
             date_of_birth=date_of_birth
         )
 
-        return Response({'success': True, 'message': 'Registration successful'})
+        return Response({'success': True, 'message': f'User: {user.username} - Registration successful'})
     
 
 from django.core.mail import send_mail
@@ -342,7 +357,7 @@ def recovery(request):
         # Send an email with a link to the password reset view
         subject = 'Password Reset'
         message = f'Click the following link to reset your password: {YOUR_RESET_URL}?token={reset_token}'
-        from_email = 'guyron2000@gmail.com'  # Update with your email
+        from_email = os.environ.get("EMAIL_HOST_USER")  # Update with your email
         recipient_list = [email]
 
         send_mail(subject, message, from_email, recipient_list)
@@ -362,19 +377,105 @@ def generate_reset_token(user):
     return 'your_generated_token'
 
 @permission_classes([IsAuthenticated])
-@api_view(["POST"])
+@api_view(["GET","PUT"])
 def modprofile(request):
-    if request.method == "POST":
-        data = json.loads(request.body)
+    if request.method == "GET":
         ruser = request.user
-        rtype = data.get('rtype')
-        if rtype == "picture":
-            user = MarketUser.objects.get(id=user.id)
-            print(user.id)
-            if ruser.id != user.id:
-                return Response({"success":False,'message':"Something Went Wrong(1)"})
-
-            return Response({"success":True,'message':"Picture Changed Successfully"})
+        # Assuming you have a search criteria, adjust the following line accordingly
+        search_criteria = request.query_params.get('search_criteria', None)
+        
+        if search_criteria:
+            # Use filter to get all receipts that match the search criteria
+            receipts = Receipt.objects.filter(user=ruser.id, your_search_field=search_criteria)
         else:
-            return Response({"success":False,'message':"Something Went Wrong(2)"})
+            # If no search criteria provided, get all receipts for the user
+            receipts = Receipt.objects.filter(user=ruser.id)
+
+        products = Product.objects.all()
+        pserializer = ProductSerializer(products, many=True)
+        
+        categories = Category.objects.all()
+        cserializer = CategorySerializer(categories, many=True)
+
+        # Combine the serialized data into a single dictionary
+        combined_data = {
+            'products': pserializer.data,
+            'categories': cserializer.data,
+        }
+        serializer = ReceiptSerializer(receipts, many=True)
+        
+        return Response({"success": True, 'message': "Receipts Received", 'receipts': serializer.data, 'combdata':combined_data})
+        
+
+    elif request.method == "PUT":
+        ruser = request.user
+        rtype = request.data.get('rtype')
+
+        if rtype == "newpicture":
+            try:
+                user = MarketUser.objects.get(id=ruser.id)
+                if ruser.id != user.id:
+                    return Response({"success":False,'message':"Something Went Wrong(1)"})
+                
+                image_file = request.data.get('img')
+                    
+                if image_file:
+                    # Check file format and size
+                    allowed_formats = ['.png']
+                    max_size = 2 * 1024 * 1024  # 2MB
+                        
+                    if not image_file.name.lower().endswith(tuple(allowed_formats)):
+                        raise ValidationError("Please upload a PNG image.")
+                        
+                    if image_file.size > max_size:
+                        raise ValidationError("Image size must be less than 2MB.")
+                    
+                    # Use the serializer to update the user instance
+                    data = {'img': SimpleUploadedFile(image_file.name, image_file.read(), content_type='image/png')}
+                    serializer = UserSerializer(user, data=data, partial=True)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response({"success": True, 'message': "Picture Changed Successfully", 'picname':image_file.name or None})
+                    else:
+                        return Response({"success": False, 'message': "Something Went Wrong"})
+                        
+                
+                return Response({"success":False,'message':"Image Was Not Found."})
+            except MarketUser.DoesNotExist:
+                return Response({'success': True, 'message': f'Something Went Wrong'})
+            except ValidationError as e:
+                print(str(e))
+                return Response({'success': False, 'message': "Something Went Wrong"}, status=400)
+        elif rtype == "newname":
+            try:
+                user = MarketUser.objects.get(id=ruser.id)
+                if ruser.id != user.id:
+                    return Response({"success":False,'message':"Something Went Wrong(1)"})
+                
+                firstname = request.data.get('firstname')
+                lastname = request.data.get('lastname')
+                    
+                if firstname and lastname:
+
+                    if user.firstname == firstname and user.lastname == lastname:
+                        return Response({"success": False, 'message':"Your New Name cant be the same as your current name."})
+                    # Check file format and size
+
+                    # Use the serializer to update the user instance
+                    data = {'firstname':firstname,'lastname':lastname}
+                    serializer = UserSerializer(user, data=data, partial=True)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response({"success": True, 'message': f"Name Changed Successfully To {firstname} {lastname}","firstname":firstname,"lastname":lastname})
+                    else:
+                        return Response({"success": False, 'message': "Something Went Wrong(2)"})
+                        
+                return Response({"success":False,'message':"Firstname or Lastname weren't specified"})
+            except MarketUser.DoesNotExist:
+                return Response({'success': True, 'message': f'Something Went Wrong(3)'})
+            except ValidationError as e:
+                print(str(e))
+                return Response({'success': False, 'message': "Something Went Wrong(4)"}, status=400)
+        else:
+            return Response({"success":False,'message':"Something Went Wrong(3)"})
             

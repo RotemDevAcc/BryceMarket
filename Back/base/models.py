@@ -1,5 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
+
+def validate_alpha(value):
+    if not value.isalpha():
+        raise ValidationError("Only letters are allowed in the first name.")
 
 class MarketUser(AbstractUser):
     GENDER_CHOICES = [
@@ -8,6 +13,8 @@ class MarketUser(AbstractUser):
         ('other', 'Other'),
     ]
 
+    firstname = models.CharField(max_length=50, null=True, validators=[validate_alpha])
+    lastname = models.CharField(max_length=50,null=True, validators=[validate_alpha])
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, null=True)
     date_of_birth = models.DateField(blank=True, null=True)
     img = models.ImageField(null=True,blank=True,default='/placeholder.png')

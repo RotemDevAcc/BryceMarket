@@ -1,9 +1,7 @@
 from django.contrib import admin
-from .models import Product, Category, Receipt
+from .models import Product, Category, Receipt, MarketUser
 # Register your models here.
 
 
 
-admin.site.register(Category)
-admin.site.register(Product)
-admin.site.register(Receipt)
+admin.site.register([MarketUser, Product, Category, Receipt])
