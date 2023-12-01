@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,12 +11,15 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.css">
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <!-- Font Awesome-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
 </head>
-<body>
-    <div class="text-center mt-3">
-        <button id="darkModeButton" class="btn btn-secondary">Dark Mode</button>
-    </div>
+
+<body onload="Init()">
     <header class="bg-dark text-white">
+        <a id="userpicture" class="navbar-brand" href="profile.html" style="display: none;">
+        </a>
         <div class="container">
             <h1>Profile Page</h1>
             <nav>
@@ -35,12 +39,99 @@
     </header>
 
     <div class="container mt-4">
+        <h2 id="profileheader"></h2>
+        <br><br>
         <ul id="profileList" class="list-group">
             <!-- Receipts will be dynamically added here -->
         </ul>
     </div>
+
+    <div class="container mt-4">
+        <h2>Settings:</h2>
+        <button id="darkModeButton" class="btn btn-secondary">Dark Mode</button>
+    </div>
+
+    <div class="modal fade" id="changeImgModal" tabindex="-1" role="dialog" aria-labelledby="changeImgModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="changeImgModalLabel">
+                        Change Image
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="changeImgForm">
+                        <label for="changeImgImage">Image (PNG format, max 2MB):</label>
+                        <input type="file" id="changeImgImage" name="changeImgImage" accept=".png" required>
+                        <br>
+
+                        <button type="button" class="btn btn-primary" onclick="submitPicForm()">Change Image</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="changeNameModal" tabindex="-1" role="dialog" aria-labelledby="changeNameModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="changeNameModalLabel">
+                        Change Name
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="changeNameForm">
+                        <label for="changeNameFirst">Firstname:</label>
+                        <input type="text" id="changeNameFirst" name="changeNameFirst" value="" required>
+                        <br>
+                        <label for="changeNameLast">Lastname:</label>
+                        <input type="text" id="changeNameLast" name="changeNameLast" value="" required>
+                        <br>
+
+                        <button type="button" class="btn btn-primary" onclick="submitNameForm()">Change Name</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="receiptModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Receipts</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="receiptContent"></div>
+                    <div class="container mt-4">
+                        <ul id="receiptList" class="list-group">
+                            <!-- Receipts will be dynamically added here -->
+                        </ul>
+                    </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="scripts/settings.js"></script>
-    <script src="profile.js"></script>
+    <script src="scripts/profile.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 
 </html>

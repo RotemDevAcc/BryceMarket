@@ -12,9 +12,6 @@
 </head>
 
 <body onload="Init()">
-    <div class="text-center mt-3">
-        <button id="darkModeButton" class="btn btn-secondary">Dark Mode</button>
-    </div>
 
     <div class="modal fade" id="sendEmailModal" tabindex="-1" role="dialog" aria-labelledby="sendEmailModalLabel"
         aria-hidden="true">
@@ -42,6 +39,8 @@
     </div>
 
     <header class="bg-dark text-white">
+        <a id ="userpicture" class="navbar-brand" href="profile.html" style="display: none;">
+        </a>
         <div class="container">
             <h1>Login Page</h1>
             <nav>
@@ -108,10 +107,11 @@
                     const result = await response.json();
                     myDetails = parseJwt(result.access)
                     sessionStorage.setItem("token", result.access)
+                    console.table(myDetails)
                     if (myDetails.is_staff){
-                        sessionStorage.setItem("userDetails", JSON.stringify({ "user": myDetails.username, "user_id": myDetails.user_id, "usermail": myDetails.email, "is_staff": myDetails.is_staff }))
+                        sessionStorage.setItem("userDetails", JSON.stringify({ "user": myDetails.username, "user_id": myDetails.user_id, "firstname":myDetails.firstname, "lastname":myDetails.lastname, "email": myDetails.email, "gender": myDetails.gender,"dob":myDetails.dob, "img":myDetails.img, "is_staff": myDetails.is_staff }))
                     }else{
-                        sessionStorage.setItem("userDetails", JSON.stringify({ "user": myDetails.username, "user_id": myDetails.user_id, "usermail": myDetails.email }))
+                        sessionStorage.setItem("userDetails", JSON.stringify({ "user": myDetails.username, "user_id": myDetails.user_id, "firstname":myDetails.firstname, "lastname":myDetails.lastname, "email": myDetails.email, "gender": myDetails.gender,"dob":myDetails.dob, "img":myDetails.img }))
                     }
                     
                     window.location.href = 'index.html';

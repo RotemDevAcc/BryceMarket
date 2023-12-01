@@ -13,9 +13,6 @@
 </head>
 
 <body>
-    <div class="text-center mt-3">
-        <button id="darkModeButton" class="btn btn-secondary">Dark Mode</button>
-    </div>
 
     <header class="bg-dark text-white">
         <div class="container">
@@ -58,21 +55,21 @@
                     'Content-Type': 'application/json',
                 },
             })
-                .then(res => {
-                    if (res.status === 401 || res.status === 403) {
-                        window.location.href = '../index.html';
-                        return;
-                    }
-                    return res.json();
-                })
-                .then(data => {
-                    const receipts = data.payload;
-                    receipts.sort((a, b) => b.id - a.id);
-                    displayReceipts(receipts, data.products);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
+            .then(res => {
+                if (res.status === 401 || res.status === 403) {
+                    window.location.href = '../index.html';
+                    return;
+                }
+                return res.json();
+            })
+            .then(data => {
+                const receipts = data.payload;
+                receipts.sort((a, b) => b.id - a.id);
+                displayReceipts(receipts, data.products);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
         } else {
             window.location.href = '../index.html';
         }

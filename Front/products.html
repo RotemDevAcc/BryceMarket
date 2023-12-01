@@ -12,10 +12,9 @@
 </head>
 
 <body onload="Init()">
-    <div class="text-center mt-3">
-        <button id="darkModeButton" class="btn btn-secondary">Dark Mode</button>
-    </div>
     <header class="bg-dark text-white">
+        <a id ="userpicture" class="navbar-brand" href="profile.html" style="display: none;">
+        </a>
         <div class="container">
             <h1>Our Products</h1>
             <nav>
@@ -99,6 +98,7 @@
                     </button>
                 </div>
                 `;
+                ResetDetails()
                 return
             }
 
@@ -121,6 +121,7 @@
                             </button>
                         </div>
                     `;
+                    ResetDetails()
                 } else {
                     // Handle other errors accordingly
                     productlist.innerHTML = `

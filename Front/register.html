@@ -14,10 +14,6 @@
 </head>
 
 <body onload="Init()">
-    <div class="text-center mt-3">
-        <button id="darkModeButton" class="btn btn-secondary">Dark Mode</button>
-    </div>
-
     <header class="bg-dark text-white">
         <div class="container">
             <h1>Register Page</h1>
@@ -57,6 +53,20 @@
                 </label>
                 <input type="email" class="form-control" id="email" name="email" placeholder="example@gmail.com"
                     required>
+            </div>
+
+            <div class="form-group">
+                <label for="firstname">
+                    <i class="fas fa-id-card"></i> Firstname:
+                </label>
+                <input type="text" class="form-control" id="firstname" name="firstname" placeholder="avner" required>
+            </div>
+
+            <div class="form-group">
+                <label for="lastname">
+                    <i class="fas fa-user-circle"></i> Lastname:
+                </label>
+                <input type="text" class="form-control" id="lastname" name="lastname" placeholder="yeruham" required>
             </div>
 
             <div class="form-group">
@@ -107,6 +117,8 @@
     <script>
         const register = async () => {
             const uservalue = document.getElementById("username").value
+            const fnamevalue = document.getElementById("firstname").value
+            const lnamevalue = document.getElementById("lastname").value
             const emailvalue = document.getElementById("email").value
             const passvalue = document.getElementById("password").value
             const confirm_password = document.getElementById('confirm_password').value;
@@ -116,6 +128,11 @@
 
             if (!uservalue) {
                 Message("Username was not entered", "error")
+                return
+            }
+
+            if(!fnamevalue || !lnamevalue){
+                Message("Firstname or Lastname weren't entered","error")
                 return
             }
 
@@ -152,6 +169,8 @@
 
             let data = {
                 "username": uservalue,
+                "firstname": fnamevalue,
+                "lastname": lnamevalue,
                 "password": passvalue,
                 "email":emailvalue,
                 "gender": gender,
