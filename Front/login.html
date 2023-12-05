@@ -39,7 +39,7 @@
     </div>
 
     <header class="bg-dark text-white">
-        <a id ="userpicture" class="navbar-brand" href="profile.html" style="display: none;">
+        <a id="userpicture" class="navbar-brand" href="profile.html" style="display: none;">
         </a>
         <div class="container">
             <h1>Login Page</h1>
@@ -72,7 +72,8 @@
                 <input type="password" class="form-control" id="password" name="password" required>
             </div>
             <button type="submit" onclick="login()" class="btn btn-primary btn-block">Login</button>
-            <p class="mt-3 text-center">Forgot Your Password? <a onclick="forgot()" style="cursor: pointer; color: rgb(0, 174, 255);">Reset Password</a></p>
+            <p class="mt-3 text-center">Forgot Your Password? <a onclick="forgot()"
+                    style="cursor: pointer; color: rgb(0, 174, 255);">Reset Password</a></p>
             <p class="mt-3 text-center">Don't have an account? <a href="register.html">Create New Account</a></p>
 
             <div id="messagebox" class="text-center mt-3"></div>
@@ -97,27 +98,58 @@
                 }
                 try {
                     const response = await fetch(MY_SERVER + "/login/", {
-                        method: "POST", // or 'PUT'
+                        method: "POST",
                         headers: {
                             "Content-Type": "application/json",
                         },
                         body: JSON.stringify(data),
                     });
 
-                    const result = await response.json();
-                    myDetails = parseJwt(result.access)
-                    sessionStorage.setItem("token", result.access)
-                    console.table(myDetails)
-                    if (myDetails.is_staff){
-                        sessionStorage.setItem("userDetails", JSON.stringify({ "user": myDetails.username, "user_id": myDetails.user_id, "firstname":myDetails.firstname, "lastname":myDetails.lastname, "email": myDetails.email, "gender": myDetails.gender,"dob":myDetails.dob, "img":myDetails.img, "is_staff": myDetails.is_staff }))
-                    }else{
-                        sessionStorage.setItem("userDetails", JSON.stringify({ "user": myDetails.username, "user_id": myDetails.user_id, "firstname":myDetails.firstname, "lastname":myDetails.lastname, "email": myDetails.email, "gender": myDetails.gender,"dob":myDetails.dob, "img":myDetails.img }))
+                    if (!response.ok) {
+                        // Handle the case where login failed (e.g., display an error message)
+                        Message("Login Failed.", "error");
+                        console.error('Login failed:', response.status, response.statusText);
+                        return; // Exit the function early
                     }
-                    
+
+                    // If the response is successful, proceed with parsing and further actions
+                    const responseData = await response.json();
+                    console.log(responseData);
+
+                    myDetails = parseJwt(responseData.access);
+                    sessionStorage.setItem("token", responseData.access);
+                    console.table(myDetails);
+
+                    if (myDetails.is_staff) {
+                        sessionStorage.setItem("userDetails", JSON.stringify({
+                            "user": myDetails.username,
+                            "user_id": myDetails.user_id,
+                            "firstname": myDetails.firstname,
+                            "lastname": myDetails.lastname,
+                            "email": myDetails.email,
+                            "gender": myDetails.gender,
+                            "dob": myDetails.dob,
+                            "img": myDetails.img,
+                            "is_staff": myDetails.is_staff
+                        }));
+                    } else {
+                        sessionStorage.setItem("userDetails", JSON.stringify({
+                            "user": myDetails.username,
+                            "user_id": myDetails.user_id,
+                            "firstname": myDetails.firstname,
+                            "lastname": myDetails.lastname,
+                            "email": myDetails.email,
+                            "gender": myDetails.gender,
+                            "dob": myDetails.dob,
+                            "img": myDetails.img
+                        }));
+                    }
+
                     window.location.href = 'index.html';
-                    // Message("Logged In Successfully","success")
                 } catch (error) {
-                    console.error("Error:", error);
+                    // Handle other types of errors (e.g., network issues)
+                    Message("Login Failed.", "error");
+                    console.error('Error:', error);
                 }
 
             }
@@ -132,11 +164,11 @@
             return JSON.parse(jsonPayload);
         }
 
-        function forgot(){
+        function forgot() {
             $('#sendEmailModal').modal('show');
         }
 
-        async function resetpassword(){
+        async function resetpassword() {
             const email = document.getElementById("sendEmailDesc").value//prompt("Enter an email address")
             if (isValidEmail(email)) {
                 $('#sendEmailModal').modal('hide');
@@ -146,21 +178,21 @@
                         headers: {
                             "Content-Type": "application/json",
                         },
-                        body: JSON.stringify({"email":email}),
+                        body: JSON.stringify({ "email": email }),
                     });
 
                     const result = await response.json();
-                    if(result.success){
-                        Message(result.message,"success")
-                    }else{
-                        Message(result.message,"error")
+                    if (result.success) {
+                        Message(result.message, "success")
+                    } else {
+                        Message(result.message, "error")
                     }
                     // Message("Logged In Successfully","success")
                 } catch (error) {
                     console.error("Error:", error);
                 }
             } else {
-                Message("Invalid email. Please enter a valid email address.","error");
+                Message("Invalid email. Please enter a valid email address.", "error");
                 // Add your logic for handling an invalid email here
             }
         }
@@ -171,12 +203,12 @@
             return emailRegex.test(email);
         }
 
-        function Init(){
+        function Init() {
             let isLiveServer = sessionStorage.getItem("IsThisFirstTime_Log_From_LiveServer") != null
             if (isLiveServer) {
                 document.body.innerHTML = "<h1>Error: Can't run this program with Live Server!</h1>";
             }
-                
+
         }
     </script>
 </body>

@@ -118,7 +118,7 @@ function displayReceipts(receipts, allproducts) {
         listItem.className = 'list-group-item';
         listItem.innerHTML = `
             <strong>Receipt ID:</strong> ${receipt.id}<br>
-            <strong>Price:</strong> $${receipt.price}<br>
+            <strong>Price:</strong> $${numberWithCommas(receipt.price)}<br>
             <strong>Products:</strong>
             <ul>
                 ${formatProducts(JSON.parse(receipt.products), allproducts)}
@@ -133,7 +133,7 @@ function formatProducts(products, allproducts) {
         const listItem = document.createElement('li');
         listItem.className = 'list-group-item';
         listItem.innerHTML = `
-        <i class="fas fa-shopping-cart"></i> Item: ${GetProductName(product.item, allproducts)}<br>
+        <i class="fas fa-shopping-cart"></i> Product Name: ${GetProductName(product.item, allproducts)}<br>
         <i class="fas fa-box"></i> Count: ${product.count}<br>
         <i class="fas fa-dollar-sign"></i> Price: $${product.price}<br>
         `;
@@ -144,7 +144,7 @@ function formatProducts(products, allproducts) {
 }
 
 function GetProductName(productId, allproducts) {
-    const foundProduct = allproducts.find(product => product.id === productId);
+    const foundProduct = allproducts.find(product => product.id === Number(productId));
     return foundProduct ? foundProduct.name : 'Product Not Found';
 }
 

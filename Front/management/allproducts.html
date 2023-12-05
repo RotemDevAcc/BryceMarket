@@ -14,7 +14,6 @@
 
 <body onload="Init()">
     <div class="text-center mt-3">
-        <button id="darkModeButton" class="btn btn-secondary">Dark Mode</button>
         <button id="addProductButton" onclick="addProduct()" class="btn btn-success">Add Product</button>
         <button id="addCategoryButton" onclick="addCategory()" class="btn btn-success">Add Category</button>
     </div>
@@ -25,7 +24,7 @@
             <nav>
                 <ul class="nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="../index.html">Home</a>
+                        <a class="nav-link" href="admin.html">Admin Home</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="customers.html">Customers</a>
@@ -470,6 +469,7 @@
         $('#addCategoryModal').modal('hide');
     }
     function addProduct() {
+        if(!allcategories || allcategories.length == 0) return Message("You need to add a category first","error")
         $('#addProductModal').modal('show');
     }
 

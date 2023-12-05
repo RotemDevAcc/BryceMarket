@@ -20,7 +20,7 @@
             <nav>
                 <ul class="nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="../index.html">Home</a>
+                        <a class="nav-link" href="admin.html">Admin Home</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="customers.html">Customers</a>
@@ -111,7 +111,7 @@
         }
 
         function GetProductName(productId, allproducts) {
-            const foundProduct = allproducts.find(product => product.id === productId);
+            const foundProduct = allproducts.find(product => product.id === Number(productId));
             return foundProduct ? foundProduct.name : 'Product Not Found';
         }
     </script>

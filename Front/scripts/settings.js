@@ -10,36 +10,37 @@ let myDetails = {}
 let details = sessionStorage.getItem("userDetails")
 if (details) {
     myDetails = JSON.parse(details)
-    if(userpicture != null){
+    const userpicture = document.getElementById("userpicture");
+    const mainnav = document.getElementById("mainnav");
+    if (userpicture != null) {
         userpicture.innerHTML = `<img src="${MY_SERVER}/static/images/${myDetails.img}" alt="Profile Logo" class="navbar-brand img-fluid" height = "40px" width="40px" style="border-radius: 50px;">`
         userpicture.style.display = "block";
     }
-    const loginid = document.getElementById("loginnav")
-    if (loginid) {
-        loginid.remove();
-        mainnav.innerHTML += 
-        `
-        <li class="nav-item">
-            <a class="nav-link" href="profile.html">Profile</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" onclick="Logout()"style="cursor: pointer;">Logout</a>
-        </li>
-        `
-    }else{
-        mainnav.innerHTML += 
-        `
-        <li class="nav-item">
-            <a class="nav-link" href="profile.html">Profile</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" onclick="Logout()"style="cursor: pointer;">Logout</a>
-        </li>
-        `
-    }
-    if (myDetails.is_staff) {
-        const mainnav = document.getElementById("mainnav")
-        if (mainnav) {
+    if (mainnav) {
+        const loginid = document.getElementById("loginnav")
+        if (loginid) {
+            loginid.remove();
+            mainnav.innerHTML +=
+                `
+            <li class="nav-item">
+                <a class="nav-link" href="profile.html">Profile</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="Logout()"style="cursor: pointer;">Logout</a>
+            </li>
+            `
+        } else {
+            mainnav.innerHTML +=
+                `
+            <li class="nav-item">
+                <a class="nav-link" href="profile.html">Profile</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="Logout()"style="cursor: pointer;">Logout</a>
+            </li>
+            `
+        }
+        if (myDetails.is_staff) {
             mainnav.innerHTML += `
             <li class="nav-item">
                 <a class="nav-link" href="management/admin.html">Admin</a>
@@ -48,13 +49,13 @@ if (details) {
     }
 }
 
-function Logout(){
+function Logout() {
     if (!myToken) return
     ResetDetails()
     window.location.href = 'index.html';
 }
 
-function ResetDetails(){
+function ResetDetails() {
     sessionStorage.removeItem("token")
     sessionStorage.removeItem("userDetails")
 }
@@ -77,7 +78,11 @@ function DarkMode() {
     }
 }
 
-DarkMode()
+function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+
 
 function Message(message, type) {
 
@@ -102,3 +107,5 @@ function Message(message, type) {
         gravity: "top", // Change the direction of the notification animation
     }).showToast();
 }
+
+DarkMode()

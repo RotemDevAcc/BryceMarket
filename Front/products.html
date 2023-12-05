@@ -13,7 +13,7 @@
 
 <body onload="Init()">
     <header class="bg-dark text-white">
-        <a id ="userpicture" class="navbar-brand" href="profile.html" style="display: none;">
+        <a id="userpicture" class="navbar-brand" href="profile.html" style="display: none;">
         </a>
         <div class="container">
             <h1>Our Products</h1>
@@ -28,7 +28,7 @@
                     <li class="nav-item">
                         <a class="nav-link" href="contact.html">Contact</a>
                     </li>
-                    <li class="nav-item" id = "loginnav">
+                    <li class="nav-item" id="loginnav">
                         <a class="nav-link" href="login.html">Login</a>
                     </li>
                 </ul>
@@ -40,7 +40,8 @@
     <div class="container">
         <nav class="navbar navbar-expand-lg">
             <span class="navbar-brand">Categories:</span>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
@@ -72,6 +73,26 @@
                         <button class="btn btn-primary" onclick="checkout()">Checkout</button>
                         <button class="btn btn-danger" onclick="clearCart()">Clear Cart</button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="confirmationModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmationModalLabel">Confirmation</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="confirmationMessage"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelButton"
+                        data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmButton">Confirm</button>
                 </div>
             </div>
         </div>
@@ -145,7 +166,7 @@
                     <button class="nav-link btn btn-link" onclick="filterProductsByCategory('all')">All Products</button>
                 </li>
             `
-            
+
             categories.map(function (category) {
                 categorytype[category.id] = category.desc
                 navCatList.innerHTML += `
@@ -155,7 +176,7 @@
                 `
             })
 
-            
+
             shoppingproducts = products
             productlist.innerHTML = ""; // Clear the productlist
 
@@ -182,8 +203,8 @@
                                 <h5 class="card-title">${element.name}</h5>
                                 <p class="card-text">Description: ${element.desc}</p>
                                 <p class="card-text">Category: ${categorytype[element.category]}</p>
-                                <p class="card-text">Price: $${element.price}</p>
-                                <button class="btn btn-primary" onclick="OnProductBuy(${index})">Add To Cart</button>
+                                <p class="card-text">Price: $${numberWithCommas(element.price)}</p>
+                                <button class="btn btn-primary" onclick="OnProductBuy(${element.id})">Add To Cart</button>
                             </div>
                         </div>
                     </div>
@@ -192,9 +213,20 @@
             });
         }
 
+        function GetProduct(productId) {
+            const foundProduct = shoppingproducts.find(product => product.id === productId);
+            return foundProduct ? foundProduct : null;
+        }
+
         function OnProductBuy(id) {
-            let product = shoppingproducts[id]
-            addToCart(product);
+            // let product = shoppingproducts[id]
+            let product = GetProduct(id)
+            if(product){
+                addToCart(product);
+            }else{
+                Message("Product Not Found","error")
+            }
+            
         }
 
         function addToCart(product) {
@@ -240,24 +272,48 @@
                     const totalPrice = Number((product.price * product.count).toFixed(2));
                     cartItem.innerHTML = `
                         <div class="d-flex justify-content-between align-items-center">
-                            <span>${product.name} (Count: ${product.count}) - $${totalPrice}</span>
+                            <span>${product.name} (Count: ${product.count}) - $${numberWithCommas(totalPrice)}</span>
                             <button class="btn btn-sm btn-danger" onclick="removeFromCart('${productId}')">X</button>
                         </div>
                     `;
                     displayprice += totalPrice
                     cartItems.appendChild(cartItem);
-                    priceheader.innerText = `$${displayprice.toFixed(2)}`
+                    priceheader.innerText = `$${numberWithCommas(displayprice.toFixed(2))}`
                 }
             }
 
-            if(isEmpty) priceheader.innerText = ""
+            if (isEmpty) priceheader.innerText = ""
 
             SaveCart()
         }
 
+        function myconfirm(message) {
+            return new Promise((resolve) => {
+                // Set the confirmation message
+                document.getElementById('confirmationMessage').innerText = message;
+
+                // Show the modal
+                $('#confirmationModal').modal('show');
+
+                // Set up event listeners for the buttons
+                document.getElementById('confirmButton').addEventListener('click', function () {
+                    // Hide the modal
+                    $('#confirmationModal').modal('hide');
+
+                    // Resolve the promise with true
+                    resolve(true);
+                });
+
+                $('#confirmationModal').on('hidden.bs.modal', function () {
+                    // Resolve the promise with false (default value)
+                    resolve(false);
+                });
+            });
+        }
+
         async function checkout() {
             if (!cart || cart.length == 0 || Object.keys(cart).length === 0) {
-                alert("No Items In The Cart Yet.")
+                Message("No Items in the cart yet.", 'error')
                 return
             }
 
@@ -272,7 +328,7 @@
 
             // Ask for confirmation
             const confirmationMessage = `Are you sure you want to purchase all the items for $${totalPrice}?`;
-            const isConfirmed = confirm(confirmationMessage);
+            const isConfirmed = await myconfirm(confirmationMessage);
 
             if (isConfirmed) {
                 // Proceed with the purchase logic
@@ -288,12 +344,12 @@
                 const result = await response.json();
                 if (result.state == "success") {
                     Message(result.msg, "success")
+                    clearCart()
                 } else {
                     Message(result.msg, "error")
                 }
-                //alert("Purchase confirmed. Implement your purchase logic here.");
             } else {
-                alert("Purchase canceled.");
+                Message("Purchase canceled.", "error")
             }
         }
 
@@ -346,11 +402,11 @@
             }
         }
 
-        function filterProductsByCategory(category){
+        function filterProductsByCategory(category) {
             const query = category
 
             // Use array.filter to filter the data based on the query
-            const filteredData = category != "all" ? products.filter(product => product.category==category) : products;
+            const filteredData = category != "all" ? products.filter(product => product.category == category) : products;
             const resultsList = document.getElementById("productlist");
             // Clear previous results
             resultsList.innerHTML = "";
@@ -370,13 +426,13 @@
                                 <p class="card-text">Description: ${product.desc}</p>
                                 <p class="card-text">Category: ${categorytype[product.category]}</p>
                                 <p class="card-text">Price: $${product.price}</p>
-                                <button class="btn btn-primary" onclick="OnProductBuy(${index})">Add To Cart</button>
+                                <button class="btn btn-primary" onclick="OnProductBuy(${product.id})">Add To Cart</button>
                             </div>
                         </div>
                     </div>
                 </div>
             `;
-            index++
+                index++
             });
         }
 
@@ -409,13 +465,13 @@
                                 <p class="card-text">Description: ${product.desc}</p>
                                 <p class="card-text">Category: ${categorytype[product.category]}</p>
                                 <p class="card-text">Price: $${product.price}</p>
-                                <button class="btn btn-primary" onclick="OnProductBuy(${index})">Add To Cart</button>
+                                <button class="btn btn-primary" onclick="OnProductBuy(${product.id})">Add To Cart</button>
                             </div>
                         </div>
                     </div>
                 </div>
             `;
-            index++
+                index++
             });
         }
 
