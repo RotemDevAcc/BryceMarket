@@ -33,9 +33,6 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['dob'] = user.date_of_birth.isoformat() if user.date_of_birth else None
         token['img'] = str(user.img) or "placeholder.png"
         token['is_staff'] = user.is_staff or None
-
-        # ...
- 
         return token
  
  
@@ -78,17 +75,15 @@ def productlist(request):
         totalPrice = Decimal('0')
 
         PurchasedItems = []
-
-        for item_id, item_info in cart.items():
-            try:
-                product = Product.objects.get(id=item_info['id'])
+        try:
+            for item_id, item_info in cart.items():
+                product = Product.objects.get(id=item_id)
                 if product:
                     if product.price == Decimal(item_info['price']):
                         itemprice = Decimal(item_info['price'])
                         totalPrice += (itemprice * item_info['count'])
-                        #PurchasedItems.append({"item": item_info['id'], "count": item_info['count'], "price": (itemprice * item_info['count']).quantize(Decimal('0.01'))})
                         PurchasedItems.append({
-                            "item": item_info['id'],
+                            "item": item_id,
                             "count": item_info['count'],
                             "price": float((itemprice * item_info['count']).quantize(Decimal('0.01')))
                         })
@@ -98,30 +93,29 @@ def productlist(request):
                 else:
                     print("Warning, Unauthorized Item Detected.")
                     return Response({"state": "fail", "msg": "ERROR, Something went wrong."})
-            except ObjectDoesNotExist:
-                print(f"Warning, Unauthorized Item Detected {item_info['id']}.")
-                return Response({"state": "fail", "msg": "ERROR, Something went wrong."})
+            if totalPrice == price:
+                user_instance = MarketUser.objects.get(username=user)
 
-        if totalPrice == price:
-            user_instance = MarketUser.objects.get(username=user)
+                receipt_data = {
+                    'products': json.dumps(PurchasedItems),
+                    'price': float(totalPrice),
+                    'user': user_instance.id
+                }
 
-            receipt_data = {
-                'products': json.dumps(PurchasedItems),
-                'price': float(totalPrice),
-                'user': user_instance.id
-            }
-
-            serializer = ReceiptSerializer(data=receipt_data)
-            if serializer.is_valid():
-                serializer.save()
-                print("Receipt saved successfully")
-                return Response({"state": "success", "msg": f"Purchase Complete, You Bought All The Specificed Items For ${totalPrice}"})
+                serializer = ReceiptSerializer(data=receipt_data)
+                if serializer.is_valid():
+                    serializer.save()
+                    print("Receipt saved successfully")
+                    return Response({"state": "success", "msg": f"Purchase Complete, You Bought All The Specificed Items For ${totalPrice}"})
+                else:
+                    print("Error in data:", serializer.errors)
             else:
-                print("Error in data:", serializer.errors)
-        else:
-            print(f"Warning Wrong Price Client Reported: {type(price)}, Server Calculated: {type(totalPrice)}")
-            print(f"Client Reported Price: {price}, Server Calculated Price: {totalPrice}")
-            return Response({"state": "fail", "msg": "Purchase Failed"})
+                print(f"Warning Wrong Price Client Reported: {type(price)}, Server Calculated: {type(totalPrice)}")
+                print(f"Client Reported Price: {price}, Server Calculated Price: {totalPrice}")
+                return Response({"state": "fail", "msg": "Purchase Failed"})
+        except ObjectDoesNotExist:
+                print(f"Warning, Unauthorized Item Detected.")
+                return Response({"state": "fail", "msg": "ERROR, Something went wrong."})
 
 # Management
 @permission_classes([IsAuthenticated, IsAdminUser])
@@ -150,6 +144,131 @@ def receipts(request):
         except MarketUser.DoesNotExist:
             return Response({"state": "fail", "msg": "User not found"}, status=status.HTTP_404_NOT_FOUND)
     return Response({"state":"success","payload":payload,"products":allproducts,"msg":"Success"})
+
+@permission_classes([IsAuthenticated, IsAdminUser])
+@api_view(["GET"])
+def get_user_receipts(request,pk):
+    try:
+        ruser = MarketUser.objects.get(id=pk)
+        # Assuming you have a search criteria, adjust the following line accordingly
+        search_criteria = request.query_params.get('search_criteria', None)
+                
+        if search_criteria:
+            # Use filter to get all receipts that match the search criteria
+            receipts = Receipt.objects.filter(user=ruser.id, your_search_field=search_criteria)
+        else:
+            # If no search criteria provided, get all receipts for the user
+            receipts = Receipt.objects.filter(user=ruser.id)
+
+            products = Product.objects.all()
+            pserializer = ProductSerializer(products, many=True)
+                
+            categories = Category.objects.all()
+            cserializer = CategorySerializer(categories, many=True)
+
+            # Combine the serialized data into a single dictionary
+            combined_data = {
+                'products': pserializer.data,
+                'categories': cserializer.data,
+            }
+            serializer = ReceiptSerializer(receipts, many=True)
+                
+            return Response({"success": True, 'message': "Receipts Received", 'receipts': serializer.data, 'combdata':combined_data})
+    except MarketUser.DoesNotExist:
+        return Response({"success": False, "message": f"User {pk} not found"})
+    
+
+lockdown = False
+
+@permission_classes([IsAuthenticated,IsAdminUser])
+@api_view(["PUT"])
+def setstaff(request):
+    if lockdown:
+        return Response({"success": False, "message": f"User not found"})
+    
+    try:
+        data = json.loads(request.body)
+        user = request.user
+        if(not user.is_superuser):
+            if user.is_staff:
+                return Response({"success": False, "message": f"You have no access to this command."})
+            else:
+                 return Response({"success": False, "message": f"Something Went Wrong"})
+        targetuser = data.get('userid')
+        ruser = MarketUser.objects.get(id=targetuser)
+        setadmin = data.get('set')
+        setdata = {'is_staff':setadmin}
+        serializer = UserSerializer(ruser, data=setdata, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"success": True, 'message': f"{ruser.username} Was {'Promoted To Staff' if setadmin else 'Demoted From Staff'} Refresh the page to update."})
+        else:
+            return Response({"success": False, 'message': "Something Went Wrong(2)"})
+    except MarketUser.DoesNotExist:
+        return Response({"success": False, "message": f"User  not found"})
+    
+@permission_classes([IsAuthenticated,IsAdminUser])
+@api_view(["DELETE"])
+def deleteuser(request):
+    if lockdown:
+        return Response({"success": False, "message": f"User not found"})
+    
+    try:
+        data = json.loads(request.body)
+        user = request.user
+        if(not user.is_superuser):
+            if user.is_staff:
+                return Response({"success": False, "message": f"You have no access to this command."})
+            else:
+                 return Response({"success": False, "message": f"Something Went Wrong"})
+        targetuser = data.get('userid')
+        ruser = MarketUser.objects.get(id=targetuser)
+        savename = ruser
+        ruser.delete()
+        return Response({"success": True, 'message': f"{savename} - {targetuser} Was Deleted Refresh the page to update."})
+
+    except MarketUser.DoesNotExist:
+        return Response({"success": False, "message": f"User  not found"})
+
+@permission_classes([IsAuthenticated, IsAdminUser])
+class UManagementView(APIView):
+    def get(self, request):
+        users = MarketUser.objects.all()
+        sendusers = []
+        for user in users:
+            sendusers.append({
+                "username": user.username,
+                "id": user.id,
+                "firstname": user.firstname,
+                "lastname": user.lastname,
+                "email": user.email,
+                "gender": user.gender,
+                "dob": user.date_of_birth.isoformat() if user.date_of_birth else None,
+                "img": user.img.url if user.img else None,
+                "is_staff": user.is_staff,
+            })        
+        serializer = UserSerializer(sendusers, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = UserSerializer(data=request.data, context={'user': request.user})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+   
+    def put(self, request, pk):
+        user = MarketUser.objects.get(pk=pk)
+        serializer = UserSerializer(user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+   
+    def delete(self, request, pk):
+        user = MarketUser.objects.get(pk=pk)
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 @permission_classes([IsAuthenticated, IsAdminUser])
 class ProductsView(APIView):
@@ -255,7 +374,7 @@ class PManagemetView(APIView):
             serializer = CategorySerializer(data=request.data, context={'user': request.user})
             if serializer.is_valid():
                 serializer.save()
-                return Response({"success": True, "message": f"The Product Was Added Successfully"})
+                return Response({"success": True, "message": f"The Category Was Added Successfully"})
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         #return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     def put(self, request, pk):
@@ -310,8 +429,8 @@ class RegistrationView(APIView):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         username = data.get('username')
-        user = MarketUser.objects.get(username=username)
-        if user:
+        existing_user = MarketUser.objects.filter(username=username).exists()
+        if existing_user:
             return Response({'success': False, 'message': "Username Already Used"}, status=400)
         firstname = data.get('firstname')
         lastname = data.get('lastname')

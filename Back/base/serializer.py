@@ -6,7 +6,7 @@ from .models import MarketUser,Product,Category, Receipt
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = MarketUser
-        fields = ('__all__')
+        fields = ['id', 'username', 'firstname', 'lastname', 'email', 'gender', 'date_of_birth', 'img', 'is_staff']
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
