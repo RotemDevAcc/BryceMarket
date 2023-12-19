@@ -6,11 +6,8 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
 from rest_framework.response import Response
-# from django.contrib.auth.models import User
-# from .models import UserProfile, Product, Category, Receipt
 from .models import MarketUser, Product, Category, Receipt
 from .serializer import UserSerializer, ProductSerializer, CategorySerializer, ReceiptSerializer
-# from .serializer import UserSerializer, ProductSerializer, CategorySerializer, ReceiptSerializer
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.contrib.auth.password_validation import validate_password
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -38,14 +35,6 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
  
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
-
-#def is_user_admin(user):
-    #if not user or user == None:
-        #return
-    
-    #print(is_user_admin(request.user))
-
-    #return user.is_staff
 
 @api_view(['GET'])
 def index(request):
@@ -77,7 +66,9 @@ def productlist(request):
 
         PurchasedItems = []
         try:
-            for item_id, item_info in cart.items():
+            # for item_id, item_info in cart.items():
+            for item_info in cart:
+                item_id = item_info.get('id')
                 product = Product.objects.get(id=item_id)
                 if product:
                     if product.price == Decimal(item_info['price']):
@@ -368,14 +359,14 @@ class PManagemetView(APIView):
                     request.data['img'] = SimpleUploadedFile(image_file.name, image_file.read())
                     
                 serializer.save()
-                return Response({"success": True, "message": f"The Product Was Added Successfully"})
+                return Response({"success": True, "message": f"The Product Was Added Successfully", "product":serializer.data},status=status.HTTP_201_CREATED)
                 #return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response({"success": False, "message": f"The Product couldn't be added"})
         elif reqtype == "category":
             serializer = CategorySerializer(data=request.data, context={'user': request.user})
             if serializer.is_valid():
                 serializer.save()
-                return Response({"success": True, "message": f"The Category Was Added Successfully"})
+                return Response({"success": True, "message": f"The Category Was Added Successfully", "category":serializer.data},status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         #return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     def put(self, request, pk):
@@ -403,7 +394,7 @@ class PManagemetView(APIView):
 
             serializer.save()
             # return Response(serializer.data)
-            return Response({"success":True,"message":f"Product {product.name} Has been updated successfully"})
+            return Response({"success":True,"message":f"Product {product.name} Has been updated successfully", "product":serializer.data})
     
         return Response({"success":False,"message":"The Product was not found."})
    
@@ -417,7 +408,7 @@ class PManagemetView(APIView):
                 default_storage.delete(product.img.name)
 
             product.delete()
-            return Response({"success": True, "message": f"Product {pk} Was Deleted Successfully"})
+            return Response({"success": True, "message": f"Product {pk} Was Deleted Successfully","product":pk})
         except Product.DoesNotExist:
             return Response({"success": False, "message": f"Product {pk} not found"})
         
