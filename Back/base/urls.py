@@ -13,7 +13,7 @@ urlpatterns = [
     path('umanagement/', UManagementView.as_view(), name='user-manage'),
     path('umanagement/receipts/<int:pk>/',views.get_user_receipts, name='user-manage-receipts'),
     path('umanagement/set/', views.setstaff,name='set-staff'),
-    path('umanagement/delete/', views.deleteuser,name='delete-user'),
+    path('umanagement/delete/<int:pk>/', views.deleteuser,name='delete-user'),
 
     #Users
     path('login/', views.MyTokenObtainPairView.as_view()),

@@ -193,34 +193,47 @@ def setstaff(request):
         serializer = UserSerializer(ruser, data=setdata, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"success": True, 'message': f"{ruser.username} Was {'Promoted To Staff' if setadmin else 'Demoted From Staff'} Refresh the page to update."})
+            return Response({"success": True, 'customer':serializer.data,'message': f"{ruser.username} Was {'Promoted To Staff' if setadmin else 'Demoted From Staff'} Refresh the page to update."})
         else:
             return Response({"success": False, 'message': "Something Went Wrong(2)"})
     except MarketUser.DoesNotExist:
         return Response({"success": False, "message": f"User  not found"})
     
+
+# def get_user_receipts(request,pk):
+    # try:
+        # ruser = MarketUser.objects.get(id=pk)
+
 @permission_classes([IsAuthenticated,IsAdminUser])
 @api_view(["DELETE"])
-def deleteuser(request):
+def deleteuser(request,pk):
     if lockdown:
         return Response({"success": False, "message": f"User not found"})
     
     try:
-        data = json.loads(request.body)
+        # data = json.loads(request.body)
         user = request.user
         if(not user.is_superuser):
             if user.is_staff:
                 return Response({"success": False, "message": f"You have no access to this command."})
             else:
                  return Response({"success": False, "message": f"Something Went Wrong"})
-        targetuser = data.get('userid')
-        ruser = MarketUser.objects.get(id=targetuser)
+        targetuser = pk
+        ruser = MarketUser.objects.get(id=pk)
+        serializer = UserSerializer(ruser)
+
+
+        userdata = serializer.data
+        userdata['id'] = pk
+
         savename = ruser
         ruser.delete()
-        return Response({"success": True, 'message': f"{savename} - {targetuser} Was Deleted Refresh the page to update."})
+        return Response({"success": True, 'customer':userdata ,'message': f"{savename} - {targetuser} Was Deleted Refresh the page to update."})
 
     except MarketUser.DoesNotExist:
         return Response({"success": False, "message": f"User  not found"})
+
+
 
 @permission_classes([IsAuthenticated, IsAdminUser])
 class UManagementView(APIView):
@@ -236,7 +249,7 @@ class UManagementView(APIView):
                 "email": user.email,
                 "gender": user.gender,
                 "dob": user.date_of_birth.isoformat() if user.date_of_birth else None,
-                "img": user.img.url if user.img else None,
+                "img": user.img,
                 "is_staff": user.is_staff,
             })        
         serializer = UserSerializer(sendusers, many=True)
