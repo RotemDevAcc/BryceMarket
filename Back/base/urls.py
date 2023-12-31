@@ -6,6 +6,7 @@ urlpatterns = [
     path('products/', ProductsView.as_view(), name='product-list'),
     path('productslist/',views.productlist),
     path('getreceipts/', views.receipts),
+    path('getcoupon/', views.getcoupon),
 
     #Management
     path('pmanagement/', PManagemetView.as_view(), name='product-manage'),

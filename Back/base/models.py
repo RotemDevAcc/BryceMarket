@@ -45,3 +45,10 @@ class Product(models.Model):
  
     def __str__(self):
            return self.desc
+    
+class Coupon(models.Model):
+    id = models.AutoField(primary_key=True) 
+    code = models.CharField(max_length=150,null=True)
+    desc = models.CharField(max_length=80,null=True)
+    percent = models.FloatField(null=True)
+    min_price = models.FloatField(default=100, null=True)

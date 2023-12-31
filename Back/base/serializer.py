@@ -1,6 +1,6 @@
 from rest_framework import serializers
 # from .models import UserProfile,Product,Category, Receipt
-from .models import MarketUser,Product,Category, Receipt
+from .models import MarketUser,Product,Category, Receipt, Coupon
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -23,3 +23,8 @@ class ReceiptSerializer(serializers.ModelSerializer):
     class Meta:
         model = Receipt
         fields = ['id', 'products', 'price', 'user']
+
+class CouponSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Coupon
+        fields = ['id', 'code', 'desc', 'percent', 'min_price']

@@ -6,8 +6,8 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import MarketUser, Product, Category, Receipt
-from .serializer import UserSerializer, ProductSerializer, CategorySerializer, ReceiptSerializer
+from .models import MarketUser, Product, Category, Receipt, Coupon
+from .serializer import UserSerializer, ProductSerializer, CategorySerializer, ReceiptSerializer, CouponSerializer
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.contrib.auth.password_validation import validate_password
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -38,6 +38,12 @@ class MyTokenObtainPairView(TokenObtainPairView):
 
 @api_view(['GET'])
 def index(request):
+
+    addcoupon = {"code":"abcdefgh", "desc":"XMAS", "percent":50,"min_price":500}
+    serializer = CouponSerializer(data=addcoupon)
+    if serializer.is_valid():  
+        serializer.save()
+        return Response({"success": True, "message": f"The Product Was Added Successfully", "product":serializer.data},status=status.HTTP_201_CREATED)
     return JsonResponse('hello', safe=False)
 
 
@@ -108,6 +114,35 @@ def productlist(request):
         except ObjectDoesNotExist:
                 print(f"Warning, Unauthorized Item Detected.")
                 return Response({"state": "fail", "msg": "ERROR, Something went wrong."})
+
+@permission_classes([IsAuthenticated])
+@api_view(["POST"])  
+def getcoupon(request):
+    data = request.data
+    try:
+        if not data.get('coupon'):
+            return Response({"success": False, "message": "Coupon not Entered"}) 
+        coupon = Coupon.objects.get(code=data['coupon'])
+        coupon_serializer = CouponSerializer(coupon)
+        serialized_data = coupon_serializer.data
+        response_data = {
+            "success": True,
+            "message": "Coupon Entered Successfully",
+            "coupon": {
+                "id": serialized_data["id"],  # Adjust with the actual attribute names
+                "code": serialized_data["code"],
+                "percent": serialized_data["percent"],
+
+                # Include other attributes as needed
+            }
+        }
+
+        
+        return Response(response_data) 
+    except Coupon.DoesNotExist:
+        return Response({"success": False, "message": "Coupon not found"}) 
+    except ValidationError as e:
+                print(str(e)) 
 
 # Management
 @permission_classes([IsAuthenticated, IsAdminUser])
